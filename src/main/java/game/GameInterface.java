@@ -7,7 +7,7 @@ import java.rmi.RemoteException;
 /**
  * Created by chuanyu on 17/9/17.
  */
-public interface Game extends Remote {
+public interface GameInterface extends Remote {
 
     // Server methods
 
