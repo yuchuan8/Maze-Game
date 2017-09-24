@@ -12,59 +12,47 @@ import java.io.Serializable;
 
 public class Player implements Serializable {
 
-    private String userName;
-//    private int score;
+    private String playerID;
     private String ip;
+    private String portNo;
+    private String uid;
 
     /**
      * This method initialize a Player instance
-     * @param userName This defines player user name
-     * @param score This defines the player score
+     * @param playerID This defines player user name
+     * @param ip This defines the player's IP address
      */
-    public Player(String userName, String ip) {
-        this.userName = userName;
+    public Player(String ip, String portNo, String playerID) {
+        this.playerID = playerID;
         this.ip = ip;
-//        this.score = score;
+        this.portNo = portNo;
+        this.uid = ip + ':' + playerID;
     }
 
     /**
      * This method gets the player user name
      * @return String This returns the player user name
      */
-    public String getUserName() {
-        return this.userName;
+    public String getplayerID() {
+        return this.playerID;
     }
 
-//    /**
-//     * This method gets the player score
-//     * @return int This returns the player score
-//     */
-//    public int getScore() {
-//        return this.score;
-//    }
 
     /**
      * This method sets the player user name
-     * @param userName This is the player user name
+     * @param playerID This is the player user name
      */
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setplayerID(String playerID) {
+        this.playerID = playerID;
     }
 
-//    /**
-//     * This method sets the player score
-//     * @param score This is the play score
-//     */
-//    public void setScore(int score) {
-//        this.score = score;
-//    }
 
     /**
      * This method gets the player IP address
      * @return
      */
     public String getIP() {
-        retrun this.ip;
+        return this.ip;
     }
 
 
@@ -74,5 +62,18 @@ public class Player implements Serializable {
      */
     public void setIP(String ip) {
         this.ip = ip;
+    }
+
+    public String getPortNo() { return this.portNo; }
+
+    public void setPortNo(String portNo) { this.portNo = portNo; }
+
+    public String getUID() { return this.uid; }
+
+    public void setUID(String uid) { this.uid = uid; }
+
+    @Override
+    public String toString() {
+        return this.playerID;
     }
 }

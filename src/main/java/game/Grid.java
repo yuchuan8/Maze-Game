@@ -1,6 +1,7 @@
 package game;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * This is the Grid class
@@ -30,10 +31,9 @@ public class Grid implements Serializable {
      * @param occupiedBy The type of occupant: 1 - player, 2 - treasure.
      * @param i x-coordinate.
      * @param j y-coordinate.
-     * @return boolean True indicates success, False indicates fail.
      */
-    public boolean setOccupied(int occupiedBy, int i, int j) {
-
+    public void setOccupied(int occupiedBy, int i, int j) {
+        this.gridStates[i][j] = occupiedBy;
     }
 
     /**
@@ -43,6 +43,19 @@ public class Grid implements Serializable {
      * @return boolean True indicates success, False indicates fail.
      */
     public boolean setEmpty(int i, int j) {
+        return false;
+    }
 
+    public boolean isOccupied(int i, int j) {
+        if (this.gridStates[i][j] != 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.deepToString(this.gridStates);
     }
 }
