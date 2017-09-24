@@ -42,20 +42,43 @@ public class Grid implements Serializable {
      * @param j y-coordinate.
      * @return boolean True indicates success, False indicates fail.
      */
-    public boolean setEmpty(int i, int j) {
-        return false;
+    public void setEmpty(int i, int j) {
+        this.gridStates[i][j] = 0;
     }
 
     public boolean isOccupied(int i, int j) {
         if (this.gridStates[i][j] != 0) {
-            return false;
-        } else {
             return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isOccupiedByTreasure(int i, int j) {
+        if (this.gridStates[i][j] == 2) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isOccupiedByPlayer(int i, int j) {
+        if (this.gridStates[i][j] == 1) {
+            return true;
+        } else {
+            return false;
         }
     }
 
     @Override
     public String toString() {
-        return Arrays.deepToString(this.gridStates);
+        String str = "";
+        for (int i = 0; i < this.gridStates.length; i++) {
+            for (int j = 0; j < this.gridStates[i].length; j++) {
+                str += this.gridStates[i][j] + " ";
+            }
+            str += "\n";
+        }
+        return str;
     }
 }

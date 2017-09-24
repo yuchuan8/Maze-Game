@@ -6,6 +6,7 @@ import player.PlayerList;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -26,7 +27,7 @@ public class GameState implements Serializable {
         this.grid = new Grid(this.n);
     }
 
-    public void addPlayer(String userName) {
+    public void addPlayer(String uid) {
 
         boolean done = false;
         int i = 0;
@@ -43,10 +44,127 @@ public class GameState implements Serializable {
         infoMap.put("i", i);
         infoMap.put("j", j);
 
-        this.states.put("score", infoMap);
+        this.states.put(uid, infoMap);
+        this.grid.setOccupied(1, i, j);
     }
 
-    public void move(String userName, int i, int j) {
+    public void removePlayer(String uid) {
+
+        Map<String, Integer> infoMap = this.states.get(uid);
+
+        // set the cell empty
+        int i = infoMap.get("i");
+        int j = infoMap.get("j");
+        this.grid.setEmpty(i, j);
+
+        // delete the player from game state
+        this.states.remove(uid);
+
+    }
+
+    public void move(String uid, char command) {
+        Map<String, Integer> infoMap = this.states.get(uid);
+        int i = infoMap.get("i");
+        int j = infoMap.get("j");
+
+        switch (command) {
+            case '1':
+                // move left
+
+                if ((j != 0) && (!this.grid.isOccupiedByPlayer(i, j - 1))) {
+                    System.out.println("moving left");
+                    // update location
+                    infoMap.put("j", j - 1);
+
+                    // update score
+                    if (this.grid.isOccupiedByTreasure(i, j - 1)) {
+                        infoMap.put("score", infoMap.get("score") + 1);
+                    }
+
+                    this.states.put(uid, infoMap);
+
+                    // set the original location as empty
+                    this.grid.setEmpty(i, j);
+
+                    // set the new location as occupied
+                    this.grid.setOccupied(1, i, j - 1);
+                }
+                break;
+
+            case '2':
+                // move down
+                if ((i != this.n - 1) && (!this.grid.isOccupiedByPlayer(i + 1, j))) {
+
+                    // update location
+                    infoMap.put("i", i + 1);
+
+                    // update score
+                    if (this.grid.isOccupiedByTreasure(i + 1, j)) {
+                        infoMap.put("score", infoMap.get("score") + 1);
+                    }
+
+                    this.states.put(uid, infoMap);
+
+                    // set the original location as empty
+                    this.grid.setEmpty(i, j);
+
+                    // set the new location as occupied
+                    this.grid.setOccupied(1, i + 1, j);
+                }
+                break;
+
+            case '3':
+                // move right
+                if ((j != this.n - 1) && (!this.grid.isOccupiedByPlayer(i, j + 1))) {
+
+
+                    // update location
+                    infoMap.put("j", j + 1);
+
+                    // update score
+                    if (this.grid.isOccupiedByTreasure(i, j + 1)) {
+                        infoMap.put("score", infoMap.get("score") + 1);
+                    }
+
+                    this.states.put(uid, infoMap);
+
+                    // set the original location as empty
+                    this.grid.setEmpty(i, j);
+
+                    // set the new location as occupied
+                    this.grid.setOccupied(1, i, j + 1);
+                }
+                break;
+
+            case '4':
+                // move up
+                if ((i != 0) && (!this.grid.isOccupiedByPlayer(i - 1, j))) {
+
+                    // update location
+                    infoMap.put("i", i - 1);
+
+                    // update score
+                    if (this.grid.isOccupiedByTreasure(i - 1, j)) {
+                        infoMap.put("score", infoMap.get("score") + 1);
+                    }
+
+                    this.states.put(uid, infoMap);
+
+                    // set the original location as empty
+                    this.grid.setEmpty(i, j);
+
+                    // set the new location as occupied
+                    this.grid.setOccupied(1, i - 1, j);
+                }
+                break;
+
+            case '9':
+                // exit the game
+                this.removePlayer(uid);
+                break;
+            default:
+                break;
+        }
 
     }
 
@@ -74,8 +192,27 @@ public class GameState implements Serializable {
         return this.grid;
     }
 
-    public Map<String, Map<Character, Integer>> getStates() {
+    public Map<String, Map<String, Integer>> getStates() {
         return this.states;
+    }
+
+    @Override
+    public String toString() {
+        String str = "";
+        Iterator itr = this.states.keySet().iterator();
+        while (itr.hasNext()) {
+            String key = itr.next().toString();
+            str += key + "-";
+            Map<String, Integer> infoMap = this.states.get(key);
+            Iterator itrInner = infoMap.keySet().iterator();
+            while (itrInner.hasNext()) {
+                String keyInner = itrInner.next().toString();
+                str += keyInner + ":";
+                str += infoMap.get(keyInner) + " ";
+            }
+            str += "\n";
+        }
+        return str;
     }
 
 }

@@ -7,15 +7,15 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by chuanyu on 19/9/17.
  */
 public class Game implements GameInterface {
+
+    static private List<Character> COMMANDS = new ArrayList<Character>(Arrays.asList('0', '1', '2', '3', '4', '9'));
 
     private String primary;
     private String secondary;
@@ -28,8 +28,8 @@ public class Game implements GameInterface {
     private GameState gameState;
 
     public Game() {
-        this.k = 30;
-        this.n = 20;
+        this.k = 3;
+        this.n = 5;
         this.primary = null;
         this.secondary = null;
         this.isPrimary = false;
@@ -39,14 +39,18 @@ public class Game implements GameInterface {
         this.gameState = new GameState(this.n, this.k);
     }
 
-    public String getPrimary() throws RemoteException { return this.primary; }
+    public String getPrimary() throws RemoteException {
+        return this.primary;
+    }
 
     public void setPrimary(String primary) {
         this.primary = primary;
     }
 
 
-    public String getSecondary() throws RemoteException {return this.secondary; }
+    public String getSecondary() throws RemoteException {
+        return this.secondary;
+    }
 
     public void setSecondary(String secondary) {
         this.secondary = secondary;
@@ -81,6 +85,7 @@ public class Game implements GameInterface {
         this.player = player;
     }
 
+
     public void startGame() {
         if (this.isPrimary()) {
             this.gameState.createKTreuarues();
@@ -89,41 +94,114 @@ public class Game implements GameInterface {
         }
     }
 
-    public boolean joinGameServer(Player player) {
+    public GameState joinGameServer(Player player) {
         if (this.isPrimary()) {
             try {
-
                 // Add a player to the player list
                 this.playerList.addPlayer(player);
                 System.out.println(this.playerList.toString());
 
                 // Add the player to the game state
-                this.gameState.updateScore(player.getUID(), 0);
+                this.gameState.addPlayer(player.getUID());
 
-                Registry registry = LocateRegistry.getRegistry();
-                GameInterface secondaryStub = (GameInterface) registry.lookup("Secondary");
-                secondaryStub.
-                return true;
+                // If not primary server, update secondary server's game state
+                if (!this.isPrimary()) {
+                    Registry registry = LocateRegistry.getRegistry(this.getSecondary());
+                    GameInterface secondaryStub = (GameInterface) registry.lookup("Secondary");
+                    secondaryStub.setGameState(this.gameState);
+                }
+
+                return this.gameState;
+
             } catch (Exception e) {
                 System.err.println("Couldn't join the game: " + e.toString());
                 e.printStackTrace();
-                return false;
+                return null;
             }
+
+
         } else {
             System.err.println("Can only join game via the primary server");
+            return null;
         }
+    }
+
+    public GameState makeMove(String uid, char command) {
+        if (this.isPrimary()) {
+            this.gameState.move(uid, command);
+        }
+        return this.gameState;
     }
 
 
     public boolean joinGame() {
         try {
-            Registry registry = LocateRegistry.getRegistry();
+
+            // Contact primary to join the game. Primary returns game state
+            Registry registry = LocateRegistry.getRegistry(this.getPrimary());
             GameInterface primaryStub = (GameInterface) registry.lookup("Primary");
-            return primaryStub.joinGameServer(this.player);
+            GameState gameState = primaryStub.joinGameServer(this.player);
+
+            // If successful, update player's game state. Otherwise return false
+            if (gameState == null) {
+                return false;
+            } else {
+                this.setGameState(gameState);
+                System.out.println(this.gameState.getGrid().toString());
+                return true;
+            }
+
+
         } catch(Exception e) {
             System.err.println("Couldn't join the game: " + e.toString());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public void play() {
+        boolean playing = true;
+        Scanner reader = new Scanner(System.in);
+
+        while (playing) {
+
+            // Ask user for input
+            System.out.println("Please enter a command: ");
+            char command = reader.nextLine().charAt(0);
+            if (COMMANDS.contains(command)) {
+
+                // Send move request to the primary server
+                try {
+                    Registry registry = LocateRegistry.getRegistry(this.primary);
+                    GameInterface primaryStub = (GameInterface) registry.lookup("Primary");
+                    GameState gameState = primaryStub.makeMove(this.player.getUID(), command);
+                    this.setGameState(gameState);
+
+                } catch(Exception e) {
+                    System.err.println("Make move exception: " + e.toString());
+                    e.printStackTrace();
+                }
+
+                // If primary returns game state, update the player game state.
+                // Else the move is now allowed
+                if (gameState != null) {
+                    this.setGameState(gameState);
+                } else {
+                    System.out.println("The move request was declined");
+                }
+
+                // Quit the game
+                if (command == '9') {
+                    playing = false;
+                }
+
+                System.out.println(this.gameState.getGrid().toString());
+
+            } else {
+                System.out.println("Invalid command");
+            }
+
+
         }
     }
 
@@ -136,7 +214,7 @@ public class Game implements GameInterface {
     }
 
 
-    public void startPrimary() {
+    private void startPrimary() {
         if (this.isPrimary()) {
             Registry registry = null;
             GameInterface stub = null;
@@ -157,12 +235,15 @@ public class Game implements GameInterface {
                 }
             }
             this.startGame();
+
+            System.out.println(this.gameState.toString());
+
         } else {
             System.err.println("This instance is not the primary server.");
         }
     }
 
-    public void startSecondary() {
+    private void startSecondary() {
         if (this.isSecondary()) {
             Registry registry = null;
             GameInterface stub = null;
@@ -219,6 +300,8 @@ public class Game implements GameInterface {
         // Set players info based on input arguments
         Game game = new Game();
         game.setPlayer(ip, portNo, playerID);
+        game.setPrimary(null);
+        game.setSecondary(null);
 
         // Start servers
         if (playerType.equals("1")) {
@@ -237,7 +320,11 @@ public class Game implements GameInterface {
         boolean hasJoined = game.joinGame();
         if (hasJoined) {
             System.out.println("Player has joined the game successfully");
+            System.out.println(game.getGameState().toString());
         }
+
+        // Play
+        game.play();
 
     }
 

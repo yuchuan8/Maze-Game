@@ -11,7 +11,9 @@ public interface GameInterface extends Remote {
 
     // Server methods
 
-    public boolean joinGameServer(Player player) throws RemoteException;
+    public GameState joinGameServer(Player player) throws RemoteException;
+
+    public GameState makeMove(String uid, char command) throws RemoteException;
 
     public void setGameState(GameState gameState) throws RemoteException;
 
