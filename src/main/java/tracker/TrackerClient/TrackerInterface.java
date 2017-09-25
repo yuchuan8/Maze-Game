@@ -1,11 +1,3 @@
-/**
- * This is the Tracker Interface
- *
- * @author  Chuan Yu
- * @version 0.1
- * @since 2016-09-17
- */
-package tracker;
 
 import java.util.Map;
 import java.rmi.Remote;
@@ -38,9 +30,8 @@ public interface TrackerInterface extends Remote {
 
     /**
      * This method remove a player from the Tracker player list.
-     * @param userName This is the user name of the player to be removed.
+     * @param uid This is the user name of the player to be removed.
      * @throws RemoteException
      */
-    public void removePlayer(String userName) throws RemoteException;
-
+    public void removePlayer(String uid) throws RemoteException;
 }
