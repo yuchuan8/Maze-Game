@@ -30,8 +30,8 @@ public interface TrackerInterface extends Remote {
 
     /**
      * This method remove a player from the Tracker player list.
-     * @param uid This is the user name of the player to be removed.
+     * @param userName This is the user name of the player to be removed.
      * @throws RemoteException
      */
-    public void removePlayer(String uid) throws RemoteException;
+    public void removePlayer(String ip, String playerID) throws RemoteException;
 }

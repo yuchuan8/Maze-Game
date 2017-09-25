@@ -15,7 +15,7 @@ public class Player implements Serializable {
     private String playerID;
     private String ip;
     private String portNo;
-    private String uid;
+    //private String uid;
 
     /**
      * This method initialize a Player instance
@@ -26,7 +26,7 @@ public class Player implements Serializable {
         this.playerID = playerID;
         this.ip = ip;
         this.portNo = portNo;
-        this.uid = ip + ':' + playerID;
+        //this.uid = ip + ':' + playerID;
     }
 
     /**
@@ -68,9 +68,11 @@ public class Player implements Serializable {
 
     public void setPortNo(String portNo) { this.portNo = portNo; }
 
-    public String getUID() { return this.uid; }
+    public String getUID() {
+        return this.ip + ":" + this.playerID;
+    }
 
-    public void setUID(String uid) { this.uid = uid; }
+    //public void setUID(String uid) { this.uid = uid; }
 
     @Override
     public String toString() {

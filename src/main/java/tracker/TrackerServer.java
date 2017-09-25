@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2004 Sun Microsystems, Inc. All  Rights Reserved.
  *  
@@ -46,7 +47,6 @@ import java.rmi.server.UnicastRemoteObject;
 import player.Player;
 import player.PlayerList;
 
-import org.json.JSONObject;
 
 public class TrackerServer implements TrackerInterface {
 	
@@ -114,8 +114,8 @@ public class TrackerServer implements TrackerInterface {
 	 * remove on player according to the uid provided
 	 * @param uid
 	 */
-    public void removePlayer(String uid) {
-		VPlayerList.removePlayer(uid);
+    public void removePlayer(String ip, String playerID) {
+		VPlayerList.removePlayer(ip, playerID);
     }
 
 	/**
