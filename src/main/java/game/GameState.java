@@ -66,6 +66,7 @@ public class GameState implements Serializable {
         Map<String, Integer> infoMap = this.states.get(uid);
         int i = infoMap.get("i");
         int j = infoMap.get("j");
+        boolean needTreasureCreation = false;
 
         switch (command) {
             case '1':
@@ -79,6 +80,7 @@ public class GameState implements Serializable {
                     // update score
                     if (this.grid.isOccupiedByTreasure(i, j - 1)) {
                         infoMap.put("score", infoMap.get("score") + 1);
+                        needTreasureCreation = true;
                     }
 
                     this.states.put(uid, infoMap);
@@ -101,6 +103,7 @@ public class GameState implements Serializable {
                     // update score
                     if (this.grid.isOccupiedByTreasure(i + 1, j)) {
                         infoMap.put("score", infoMap.get("score") + 1);
+                        needTreasureCreation = true;
                     }
 
                     this.states.put(uid, infoMap);
@@ -124,6 +127,7 @@ public class GameState implements Serializable {
                     // update score
                     if (this.grid.isOccupiedByTreasure(i, j + 1)) {
                         infoMap.put("score", infoMap.get("score") + 1);
+                        needTreasureCreation = true;
                     }
 
                     this.states.put(uid, infoMap);
@@ -146,6 +150,7 @@ public class GameState implements Serializable {
                     // update score
                     if (this.grid.isOccupiedByTreasure(i - 1, j)) {
                         infoMap.put("score", infoMap.get("score") + 1);
+                        needTreasureCreation = true;
                     }
 
                     this.states.put(uid, infoMap);
@@ -166,14 +171,29 @@ public class GameState implements Serializable {
                 break;
         }
 
+        if (needTreasureCreation) {
+            this.createTreasure();
+        }
+
     }
 
     public void updateScore(String userName, int score) {
 
     }
 
-    public void createTreasure(int i, int j) {
+    public void createTreasure() {
 
+        boolean done = false;
+        int i = 0;
+        int j = 0;
+        while (!done) {
+            i = ThreadLocalRandom.current().nextInt(0, this.n);
+            j = ThreadLocalRandom.current().nextInt(0, this.n);
+            if (!this.grid.isOccupied(i, j)) {
+                done = true;
+            }
+        }
+        this.grid.setOccupied(2, i, j);
     }
 
     public void createKTreuarues() {
