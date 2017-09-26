@@ -48,8 +48,8 @@ public class PlayerList implements Serializable{
     /**
      * This method removes a player from a player list
      */
-    public Map <String, Object> removePlayer(String ip, String playerID) {
-        String key = ip + ":" + playerID;
+    public Map <String, Object> removePlayer(String playerID) {
+        String key = playerID;
         int addSuccessful = 0;
         String Message = "";
         Player value = this.players.get(key);

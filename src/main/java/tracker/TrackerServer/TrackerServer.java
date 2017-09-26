@@ -1,4 +1,4 @@
-
+package tracker;
 /*
  * Copyright 2004 Sun Microsystems, Inc. All  Rights Reserved.
  *  
@@ -114,8 +114,8 @@ public class TrackerServer implements TrackerInterface {
 	 * remove on player according to the uid provided
 	 * @param uid
 	 */
-    public void removePlayer(String ip, String playerID) {
-		VPlayerList.removePlayer(ip, playerID);
+    public void removePlayer(String playerID) {
+		VPlayerList.removePlayer(playerID);
     }
 
 	/**
@@ -133,13 +133,14 @@ public class TrackerServer implements TrackerInterface {
 		TrackerInterface stub = null;
 		Registry registry = null;
 	try {
-		System.err.println("Tracker Port: " + Integer.toString(obj.portNum));
+		System.err.println("TrackerServer Port: " + Integer.toString(obj.portNum));
 	    stub = (TrackerInterface) UnicastRemoteObject.exportObject(obj, obj.portNum);
-	    registry = LocateRegistry.getRegistry();
+        registry = LocateRegistry.getRegistry();
 	    registry.bind("Tracker", stub);
 	    System.err.println("Tracker ready");
 	} catch (Exception e) {
 	    try{
+			System.err.println("Tracker exception: " + e.toString());
 			registry.unbind("Tracker");
 			registry.bind("Tracker",stub);
 	    	System.err.println("Tracker ready");
