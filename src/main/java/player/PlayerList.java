@@ -2,6 +2,7 @@ package player;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.*;
 
 /**
  * THis is the PlayerList Class
@@ -11,35 +12,66 @@ import java.util.ArrayList;
  */
 public class PlayerList implements Serializable{
 
-    private ArrayList<Player> players;
-
+    //private ArrayList<Player> players;
+    private Map <String, Player> players;
     /**
      * This method initialize an instance of PlayList
      */
     public PlayerList() {
-        this.players = new ArrayList<Player>();
+        //this.players = new ArrayList<Player>();
+        this.players = new HashMap<String, Player>();
     }
 
     /**
      * This method adds a player to a player list
      * @param player This is the player to be added
      */
-    public void addPlayer(Player player) {
-        this.players.add(player);
+    public Map <String, Object> addPlayer(Player player) {
+        String key = player.getUID();
+        int addSuccessful = 0;
+        String Message = "";
+        Player value = this.players.get(key);
+        if (value != null) {
+            addSuccessful = 0;
+            Message = "Add new player Fail. Player exists.";
+        } else {
+            this.players.put(key, player);
+            addSuccessful = 1;
+            Message = "Add new player successfully.";
+        }
+        Map <String, Object> returnMessage = new HashMap <String, Object> ();
+        returnMessage.put("isSuccessful_int", addSuccessful);
+        returnMessage.put("message_String", Message);
+        return returnMessage;
     }
 
     /**
      * This method removes a player from a player list
      */
-    public void removePlayer() {
-
+    public Map <String, Object> removePlayer(String playerID) {
+        String key = playerID;
+        int addSuccessful = 0;
+        String Message = "";
+        Player value = this.players.get(key);
+        if (value != null) {
+            this.players.remove(key);
+            addSuccessful = 1;
+            Message = "Delete player successfully.";
+        } else {
+            addSuccessful = 0;
+            Message = "Delete player fail. Player don't exist.";
+        }
+        Map <String, Object> returnMessage = new HashMap <String, Object> ();
+        returnMessage.put("isSuccessful_int", addSuccessful);
+        returnMessage.put("message_String", Message);
+        return returnMessage;
     }
 
     /**
      * This method get all players from a player list
      * @return Player[] An array of players
      */
-    public ArrayList<Player> getPlayers() {
+    public Map <String, Player> getPlayers() {
         return this.players;
     }
 
@@ -47,7 +79,8 @@ public class PlayerList implements Serializable{
     @Override
     public String toString() {
         String str = "";
-        for (Player player : this.players) {
+        for (String key : this.players.keySet()) {
+            Player player = this.players.get(key);
             str += player.toString() + " ";
         }
         return str;

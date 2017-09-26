@@ -1,4 +1,4 @@
-
+package trackerClient;
 import java.util.Map;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -33,5 +33,6 @@ public interface TrackerInterface extends Remote {
      * @param userName This is the user name of the player to be removed.
      * @throws RemoteException
      */
-    public void removePlayer(String uid) throws RemoteException;
+    public void removePlayer(String playerID) throws RemoteException;
+
 }

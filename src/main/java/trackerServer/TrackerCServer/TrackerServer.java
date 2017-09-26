@@ -1,3 +1,4 @@
+package tracker;
 /*
  * Copyright 2004 Sun Microsystems, Inc. All  Rights Reserved.
  *  
@@ -46,7 +47,6 @@ import java.rmi.server.UnicastRemoteObject;
 import player.Player;
 import player.PlayerList;
 
-import org.json.JSONObject;
 
 public class TrackerServer implements TrackerInterface {
 	
@@ -114,8 +114,8 @@ public class TrackerServer implements TrackerInterface {
 	 * remove on player according to the uid provided
 	 * @param uid
 	 */
-    public void removePlayer(String uid) {
-		VPlayerList.removePlayer(uid);
+    public void removePlayer(String playerID) {
+		VPlayerList.removePlayer(playerID);
     }
 
 	/**
@@ -133,13 +133,14 @@ public class TrackerServer implements TrackerInterface {
 		TrackerInterface stub = null;
 		Registry registry = null;
 	try {
-		System.err.println("Tracker Port: " + Integer.toString(obj.portNum));
+		System.err.println("TrackerServer Port: " + Integer.toString(obj.portNum));
 	    stub = (TrackerInterface) UnicastRemoteObject.exportObject(obj, obj.portNum);
-	    registry = LocateRegistry.getRegistry();
+        registry = LocateRegistry.getRegistry();
 	    registry.bind("Tracker", stub);
 	    System.err.println("Tracker ready");
 	} catch (Exception e) {
 	    try{
+			System.err.println("Tracker exception: " + e.toString());
 			registry.unbind("Tracker");
 			registry.bind("Tracker",stub);
 	    	System.err.println("Tracker ready");
