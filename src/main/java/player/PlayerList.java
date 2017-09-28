@@ -26,23 +26,25 @@ public class PlayerList implements Serializable{
      * This method adds a player to a player list
      * @param player This is the player to be added
      */
-    public Map <String, Object> addPlayer(Player player) {
-        String key = player.getUID();
-        int addSuccessful = 0;
-        String Message = "";
+    public boolean addPlayer(Player player) {
+
+        boolean addSuccessful = false;
+
+        // Get new player ID
+        String key = player.getplayerID();
         Player value = this.players.get(key);
+
+        // If player ID already exits, return false.
+        // Otherwise, add the new player to the player list
         if (value != null) {
-            addSuccessful = 0;
-            Message = "Add new player Fail. Player exists.";
+            addSuccessful = false;
+            System.err.println("Add new player Fail. Player exists.");
         } else {
             this.players.put(key, player);
-            addSuccessful = 1;
-            Message = "Add new player successfully.";
+            addSuccessful = true;
         }
-        Map <String, Object> returnMessage = new HashMap <String, Object> ();
-        returnMessage.put("isSuccessful_int", addSuccessful);
-        returnMessage.put("message_String", Message);
-        return returnMessage;
+
+        return addSuccessful;
     }
 
     /**
@@ -71,8 +73,16 @@ public class PlayerList implements Serializable{
      * This method get all players from a player list
      * @return Player[] An array of players
      */
-    public Map <String, Player> getPlayers() {
+    public Map<String, Player> getPlayers() {
         return this.players;
+    }
+
+    public Player getPlayer(String playerID) {
+        return this.players.get(playerID);
+    }
+
+    public int getSize() {
+        return this.players.size();
     }
 
 

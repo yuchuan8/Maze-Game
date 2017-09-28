@@ -1,9 +1,11 @@
 package game;
 
-import tracker.player.Player;
+import com.sun.org.apache.regexp.internal.RE;
+import player.Player;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+
 /**
  * Created by chuanyu on 17/9/17.
  */
@@ -19,9 +21,15 @@ public interface GameInterface extends Remote {
 
     public GameState getGameState() throws RemoteException;
 
-    public void multicastUpdatePrimary(Player player) throws RemoteException;
+    public String getPrimary() throws RemoteException;
 
-    public String multicastPingReportDeadBody() throws RemoteException;
+    public String getSecondary() throws RemoteException;
+
+    public void setSecondary(String secondaryID) throws RemoteException;
+
+//    public void multicastUpdatePrimary(Player player) throws RemoteException;
+
+//    public String multicastPingReportDeadBody() throws RemoteException;
 
 //    public void startGame();
 
