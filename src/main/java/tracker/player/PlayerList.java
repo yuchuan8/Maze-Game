@@ -1,4 +1,4 @@
-package player;
+package tracker.player;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -31,8 +31,16 @@ public class PlayerList implements Serializable{
     /**
      * This method removes a player from a player list
      */
-    public void removePlayer(String userName) {
-
+    public void removePlayer(String uid) {
+        for(int arrayIndex=0;arrayIndex<this.players.size();arrayIndex++) {
+            String playerUid = this.players.get(arrayIndex).getUID();
+            if(playerUid.equals(uid)){
+                System.err.println(playerUid);
+                System.err.println(arrayIndex);
+                this.players.remove(arrayIndex);
+                --arrayIndex;
+            }
+        }
     }
 
     /**

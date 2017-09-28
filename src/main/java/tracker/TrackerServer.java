@@ -1,4 +1,4 @@
-/*
+package tracker;/*
  * Copyright 2004 Sun Microsystems, Inc. All  Rights Reserved.
  *  
  * Redistribution and use in source and binary forms, with or 
@@ -43,9 +43,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-import player.Player;
-import player.PlayerList;
-
 import org.json.JSONObject;
 
 public class TrackerServer implements TrackerInterface {
@@ -53,7 +50,7 @@ public class TrackerServer implements TrackerInterface {
 	private int N = -1;
 	private int K = -1;
 	private int portNum = -1;
-	PlayerList VPlayerList = new PlayerList();
+	tracker.player.PlayerList VPlayerList = new tracker.player.PlayerList();
 	
     public TrackerServer() {}
 
@@ -98,7 +95,7 @@ public class TrackerServer implements TrackerInterface {
 	 * update the whole playerList
 	 * @param players
 	 */
-	public void updatePlayerList(PlayerList players) {
+	public void updatePlayerList(tracker.player.PlayerList players) {
 		VPlayerList = players;
     }
 
@@ -106,7 +103,7 @@ public class TrackerServer implements TrackerInterface {
 	 * add one player
 	 * @param player
 	 */
-    public void addPlayer(Player player) {
+    public void addPlayer(tracker.player.Player player) {
 		VPlayerList.addPlayer(player);
     }
 

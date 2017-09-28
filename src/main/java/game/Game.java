@@ -2,13 +2,14 @@ package game;
 
 import player.Player;
 import player.PlayerList;
+import tracker.TrackerInterface;
+import tracker.TrackerServer;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by chuanyu on 19/9/17.
@@ -285,7 +286,7 @@ public class Game implements GameInterface {
 
         // check number of input args
         if (args.length < 4) {
-            System.out.println("There should be 6 args. " +
+            System.out.println("There should be 4 args. " +
                     "The proper usage is: " +
                     "java Game.java [IP-address][port-number][player-id][player-type]");
             System.exit(0);
@@ -297,11 +298,29 @@ public class Game implements GameInterface {
         String playerID = args[2];
         String playerType = args[3];
 
+
         // Set players info based on input arguments
         Game game = new Game();
         game.setPlayer(ip, portNo, playerID);
         game.setPrimary(null);
         game.setSecondary(null);
+
+        // Get player list and parameters from the tracker
+        try {
+            Registry registry = LocateRegistry.getRegistry(ip, Integer.parseInt(portNo));
+            TrackerInterface trackerStub = (TrackerInterface) registry.lookup("Tracker");
+            Map<String, Object> parametersPlayers = trackerStub.returnParametersPlayers();
+            PlayerList playerList = (PlayerList) parametersPlayers.get("PlayerList");
+            int n = (int) parametersPlayers.get("N");
+            int k = (int) parametersPlayers.get("K");
+            game.playerList = playerList;
+            game.n = n;
+            game.k = k;
+        } catch (Exception e) {
+            System.err.println("Not able to contact the tracker" + e.toString());
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         // Start servers
         if (playerType.equals("1")) {

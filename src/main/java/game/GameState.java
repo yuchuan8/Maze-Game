@@ -1,10 +1,6 @@
 package game;
 
-import player.Player;
-import player.PlayerList;
-
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -73,7 +69,6 @@ public class GameState implements Serializable {
                 // move left
 
                 if ((j != 0) && (!this.grid.isOccupiedByPlayer(i, j - 1))) {
-                    System.out.println("moving left");
                     // update location
                     infoMap.put("j", j - 1);
 

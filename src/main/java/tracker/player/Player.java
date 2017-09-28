@@ -1,4 +1,4 @@
-package player;
+package tracker.player;
 
 import java.io.Serializable;
 

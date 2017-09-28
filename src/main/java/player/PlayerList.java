@@ -11,20 +11,20 @@ import java.util.ArrayList;
  */
 public class PlayerList implements Serializable{
 
-    private ArrayList<Player> players;
+    private ArrayList<tracker.player.Player> players;
 
     /**
      * This method initialize an instance of PlayList
      */
     public PlayerList() {
-        this.players = new ArrayList<Player>();
+        this.players = new ArrayList<tracker.player.Player>();
     }
 
     /**
      * This method adds a player to a player list
      * @param player This is the player to be added
      */
-    public void addPlayer(Player player) {
+    public void addPlayer(tracker.player.Player player) {
         this.players.add(player);
     }
 
@@ -39,7 +39,7 @@ public class PlayerList implements Serializable{
      * This method get all players from a player list
      * @return Player[] An array of players
      */
-    public ArrayList<Player> getPlayers() {
+    public ArrayList<tracker.player.Player> getPlayers() {
         return this.players;
     }
 
@@ -47,7 +47,7 @@ public class PlayerList implements Serializable{
     @Override
     public String toString() {
         String str = "";
-        for (Player player : this.players) {
+        for (tracker.player.Player player : this.players) {
             str += player.toString() + " ";
         }
         return str;

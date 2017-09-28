@@ -1,6 +1,6 @@
 package game;
 
-import player.Player;
+import tracker.player.Player;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
