@@ -1,4 +1,4 @@
-package tracker;
+package trackerClient;
 import java.util.Map;
 import java.rmi.Remote;
 import java.rmi.RemoteException;

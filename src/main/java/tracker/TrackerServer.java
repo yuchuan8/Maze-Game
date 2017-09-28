@@ -1,4 +1,5 @@
-package tracker;/*
+package tracker;
+/*
  * Copyright 2004 Sun Microsystems, Inc. All  Rights Reserved.
  *  
  * Redistribution and use in source and binary forms, with or 
@@ -43,14 +44,16 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-import org.json.JSONObject;
+import player.Player;
+import player.PlayerList;
+
 
 public class TrackerServer implements TrackerInterface {
 	
 	private int N = -1;
 	private int K = -1;
 	private int portNum = -1;
-	tracker.player.PlayerList VPlayerList = new tracker.player.PlayerList();
+	PlayerList VPlayerList = new PlayerList();
 	
     public TrackerServer() {}
 
@@ -95,7 +98,7 @@ public class TrackerServer implements TrackerInterface {
 	 * update the whole playerList
 	 * @param players
 	 */
-	public void updatePlayerList(tracker.player.PlayerList players) {
+	public void updatePlayerList(PlayerList players) {
 		VPlayerList = players;
     }
 
@@ -103,7 +106,7 @@ public class TrackerServer implements TrackerInterface {
 	 * add one player
 	 * @param player
 	 */
-    public void addPlayer(tracker.player.Player player) {
+    public void addPlayer(Player player) {
 		VPlayerList.addPlayer(player);
     }
 
@@ -111,8 +114,8 @@ public class TrackerServer implements TrackerInterface {
 	 * remove on player according to the uid provided
 	 * @param uid
 	 */
-    public void removePlayer(String uid) {
-		VPlayerList.removePlayer(uid);
+    public void removePlayer(String playerID) {
+		VPlayerList.removePlayer(playerID);
     }
 
 	/**
@@ -130,13 +133,14 @@ public class TrackerServer implements TrackerInterface {
 		TrackerInterface stub = null;
 		Registry registry = null;
 	try {
-		System.err.println("Tracker Port: " + Integer.toString(obj.portNum));
+		System.err.println("TrackerServer Port: " + Integer.toString(obj.portNum));
 	    stub = (TrackerInterface) UnicastRemoteObject.exportObject(obj, obj.portNum);
-	    registry = LocateRegistry.getRegistry();
+        registry = LocateRegistry.getRegistry();
 	    registry.bind("Tracker", stub);
 	    System.err.println("Tracker ready");
 	} catch (Exception e) {
 	    try{
+			System.err.println("Tracker exception: " + e.toString());
 			registry.unbind("Tracker");
 			registry.bind("Tracker",stub);
 	    	System.err.println("Tracker ready");

@@ -19,6 +19,9 @@ public interface GameInterface extends Remote {
 
     public GameState getGameState() throws RemoteException;
 
+    public void multicastUpdatePrimary(Player player) throws RemoteException;
+
+    public String multicastPingReportDeadBody() throws RemoteException;
 
 //    public void startGame();
 

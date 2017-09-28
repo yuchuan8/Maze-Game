@@ -1,7 +1,7 @@
 package player;
 
 import java.io.Serializable;
-
+import java.util.*;
 /**
  * THis is the Player Class
  * @author Chuan Yu
@@ -13,20 +13,22 @@ import java.io.Serializable;
 public class Player implements Serializable {
 
     private String playerID;
-    private String ip;
+    //private String ip;
     private String portNo;
-    private String uid;
+    private Map<String,Object> stubDict;
+    //private String uid;
 
     /**
      * This method initialize a Player instance
      * @param playerID This defines player user name
      * @param ip This defines the player's IP address
      */
-    public Player(String ip, String portNo, String playerID) {
+    public Player(String portNo, String playerID, Map<String,Object> stubDict) {
         this.playerID = playerID;
-        this.ip = ip;
+        //this.ip = ip;
         this.portNo = portNo;
-        this.uid = ip + ':' + playerID;
+        this.stubDict = stubDict;
+        //this.uid = ip + ':' + playerID;
     }
 
     /**
@@ -51,26 +53,43 @@ public class Player implements Serializable {
      * This method gets the player IP address
      * @return
      */
-    public String getIP() {
-        return this.ip;
-    }
+    //public String getIP() {
+    //    return this.ip;
+    //}
 
 
     /**
      * This method sets the player IP address
      * @param ip
      */
-    public void setIP(String ip) {
-        this.ip = ip;
-    }
+    //public void setIP(String ip) {
+    //    this.ip = ip;
+    //}
 
     public String getPortNo() { return this.portNo; }
 
     public void setPortNo(String portNo) { this.portNo = portNo; }
 
-    public String getUID() { return this.uid; }
+    public String getUID() {
+        return this.playerID;
+    }
 
-    public void setUID(String uid) { this.uid = uid; }
+    public void setStubDict(Map<String,Object> stubDict){
+        this.stubDict = stubDict;
+    }
+    public Map<String,Object> getStubDict(){
+        return this.stubDict;
+    }
+    public void addStubDict(String key, Object object){
+        this.stubDict.put(key, object);
+    }
+    public void removeStubDict(String key){
+        Object value = this.stubDict.get(key);
+        if (value != null) {
+            this.stubDict.remove(key);
+        }
+    }
+    //public void setUID(String uid) { this.uid = uid; }
 
     @Override
     public String toString() {
