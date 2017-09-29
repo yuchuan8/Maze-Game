@@ -23,11 +23,12 @@ public class Game implements GameInterface {
     private String secondary;
     private boolean isPrimary;
     private boolean isSecondary;
-    private PlayerList playerList;
     private Player player;
+    private PlayerList playerList;
     private int k;
     private int n;
     private GameState gameState;
+
 
     public Game() {
         this.k = 0;
@@ -41,112 +42,50 @@ public class Game implements GameInterface {
         this.gameState = null;
     }
 
-    public String getPrimary() throws RemoteException {
-        return this.primary;
-    }
+    /**
+     * Local method
+     * This method is used to contact tracker before joining the game. Each player / server export a
+     * their stub and pass it to the tracker. The tracker add the player / server to the player list,
+     * and return n, k and player list which includes each player / server's stub.
+     *
+     * @param ip     String. Tracker IP.
+     * @param portNo int. Tracker port number.
+     */
+    public void contactTracker(String ip, int portNo) {
+        try {
 
-    public void setPrimary(String primary) {
-        this.primary = primary;
-    }
+            // Get tracker stub
+            Registry registry = LocateRegistry.getRegistry(ip, portNo);
+            TrackerInterface trackerStub = (TrackerInterface) registry.lookup("Tracker");
 
-
-    public String getSecondary() {
-        return this.secondary;
-    }
-
-    public void setSecondary(String secondaryID) {
-        this.secondary = secondaryID;
-    }
-
-    public boolean isPrimary() {
-        return this.isPrimary;
-    }
-
-    public boolean isSecondary() {
-        return this.isSecondary;
-    }
-
-    public void setIsPrimary(boolean isPrimary) {
-        if (isPrimary) {
-            this.isPrimary = true;
-        } else {
-            this.isSecondary = false;
-        }
-    }
-
-    public void setIsSecondary(boolean isSecondary) {
-        if (isSecondary) {
-            this.isSecondary = true;
-        } else {
-            this.isSecondary = false;
-        }
-    }
-
-    public Player getPlayer() {
-        return this.player;
-    }
-
-    public void setPlayer(int portNo, String playerID, GameInterface stub) {
-        Player player = new Player(portNo, playerID, stub);
-        this.player = player;
-    }
-
-    public PlayerList getPlayerList() {
-        return this.playerList;
-    }
-
-    public void setPlayerList(PlayerList playerList) {
-        this.playerList = playerList;
-    }
-
-
-    public void startGame() {
-        if (this.isPrimary()) {
-            this.gameState = new GameState(this.n, this.k);
-            this.gameState.createKTreuarues();
-        } else {
-            System.err.println("Only primary server can start a new game");
-        }
-    }
-
-    public GameState joinGameServer(Player player) {
-        if (this.isPrimary()) {
-            try {
-                // Add a player to the player list
-                this.playerList.addPlayer(player);
-                System.out.println(this.playerList.toString());
-
-                // Add the player to the game state
-                this.gameState.addPlayer(player.getplayerID());
-
-                // If not primary server, update secondary server's game state
-                if (!this.isPrimary()) {
-                    GameInterface secondaryStub = this.playerList.getPlayer(this.secondary).getStub();
-                    secondaryStub.setGameState(this.gameState);
-                }
-                return this.gameState;
-
-            } catch (Exception e) {
-                System.err.println("Couldn't join the game: " + e.toString());
-                e.printStackTrace();
-                return null;
+            // Add the new player to tracker player list, and get player list and paramters
+            // from tracker
+            Map<String, Object> parametersPlayers = trackerStub.addPlayer(this.player);
+            if (parametersPlayers == null) {
+                System.err.println("Add new player failed");
+                System.exit(1);
             }
 
+            // Update local n, k and player list
+            this.n = (int) parametersPlayers.get("N");
+            this.k = (int) parametersPlayers.get("K");
+            this.playerList = (PlayerList) parametersPlayers.get("PlayerList");
 
-        } else {
-            System.err.println("Can only join game via the primary server");
-            return null;
+        } catch (Exception e) {
+            System.err.println("Get registry exception: " + e.toString());
+            e.printStackTrace();
+            System.exit(1);
         }
     }
 
-    public GameState makeMove(String uid, char command) {
-        if (this.isPrimary()) {
-            this.gameState.move(uid, command);
-        }
-        return this.gameState;
-    }
-
-
+    /**
+     * Local method
+     * This method is used by player to join the game. The player first asks a random player
+     * for the server IDs. The it finds the primary server stub from its own player list and
+     * remote calls primary server's method to actually join the game.
+     *
+     * @return boolean. True indicates success, false indicates failure.
+     */
     public boolean joinGame() {
 
         if (this.isPrimary()) {
@@ -191,61 +130,10 @@ public class Game implements GameInterface {
 
     }
 
-//    public void play() {
-//        boolean playing = true;
-//        Scanner reader = new Scanner(System.in);
-//
-//        while (playing) {
-//
-//            // Ask user for input
-//            System.out.println("Please enter a command: ");
-//            char command = reader.nextLine().charAt(0);
-//            if (COMMANDS.contains(command)) {
-//
-//                // Send move request to the primary server
-//                try {
-//                    Registry registry = LocateRegistry.getRegistry(this.primary);
-//                    GameInterface primaryStub = (GameInterface) registry.lookup("Primary");
-//                    GameState gameState = primaryStub.makeMove(this.player.getUID(), command);
-//                    this.setGameState(gameState);
-//
-//                } catch(Exception e) {
-//                    System.err.println("Make move exception: " + e.toString());
-//                    e.printStackTrace();
-//                }
-//
-//                // If primary returns game state, update the player game state.
-//                // Else the move is now allowed
-//                if (gameState != null) {
-//                    this.setGameState(gameState);
-//                } else {
-//                    System.out.println("The move request was declined");
-//                }
-//
-//                // Quit the game
-//                if (command == '9') {
-//                    playing = false;
-//                }
-//
-//                System.out.println(this.gameState.getGrid().toString());
-//
-//            } else {
-//                System.out.println("Invalid command");
-//            }
-//
-//
-//        }
-//    }
-
-    public GameState getGameState() {
-        return this.gameState;
-    }
-
-    public void setGameState(GameState gameState) {
-        this.gameState = gameState;
-    }
-
-
+    /**
+     * Local method.
+     * This method is used to start the primary server.
+     */
     private void startPrimary() {
         if (this.isPrimary()) {
             this.startGame();
@@ -256,7 +144,131 @@ public class Game implements GameInterface {
         }
     }
 
+    /**
+     * Remote method
+     * This method is used by the primary server to join a player to the game. The primary
+     * server adds the new player to its player list and game state. A random position
+     * (i, j coordinates of the grid) is given to the new player.
+     *
+     * @param player Player. The new player object.
+     * @return GameState object. This GameState object is returned to the new player to update its local game state.
+     */
+    public GameState joinGameServer(Player player) {
+        if (this.isPrimary()) {
+            try {
+                // Add a player to the player list
+                this.playerList.addPlayer(player);
+                System.out.println(this.playerList.toString());
 
+                // Add the player to the game state
+                this.gameState.addPlayer(player.getplayerID());
+
+                // If not primary server, update secondary server's game state
+                if (!this.isPrimary()) {
+                    GameInterface secondaryStub = this.playerList.getPlayer(this.secondary).getStub();
+                    secondaryStub.setGameState(this.gameState);
+                }
+                return this.gameState;
+
+            } catch (Exception e) {
+                System.err.println("Couldn't join the game: " + e.toString());
+                e.printStackTrace();
+                return null;
+            }
+
+
+        } else {
+            System.err.println("Can only join game via the primary server");
+            return null;
+        }
+    }
+
+    /**
+     * Local method
+     * This method is used by the primary server to start a new game. The primary server
+     * creates a n by n grid and creates k treasures on the grid.
+     */
+    public void startGame() {
+        if (this.isPrimary()) {
+            this.gameState = new GameState(this.n, this.k);
+            this.gameState.createKTreuarues();
+        } else {
+            System.err.println("Only primary server can start a new game");
+        }
+    }
+
+    /**
+     * Local Method.
+     * THis method is used by players to play game. It waits for command and send it to the primary
+     * server.
+     */
+    public void play() {
+        boolean playing = true;
+        Scanner reader = new Scanner(System.in);
+
+        while (playing) {
+
+            // Ask user for input
+            System.out.println("Please enter a command: ");
+            char command = reader.nextLine().charAt(0);
+            if (COMMANDS.contains(command)) {
+
+                // Get primary stub
+                GameInterface primaryStub = (GameInterface) this.playerList.getPlayer(this.primary).getStub();
+
+                // Send move request to the primary server
+                GameState gameState = null;
+                try {
+                    gameState = primaryStub.makeMove(this.player.getplayerID(), command);
+                } catch (Exception e) {
+                    System.err.println("Make move exception: " + e.toString());
+                    e.printStackTrace();
+                }
+
+                // If primary returns game state, update the player game state.
+                // Else the move is not allowed
+                if (gameState != null) {
+                    this.setGameState(gameState);
+                } else {
+                    System.out.println("The move request was declined");
+                }
+
+                // Quit the game
+                if (command == '9') {
+                    playing = false;
+                }
+
+                System.out.println(this.gameState.getGrid().toString());
+
+            } else {
+                System.out.println("Invalid command");
+            }
+
+
+        }
+    }
+
+    /**
+     * Remote method.
+     * Players remote call this primary server method to make moves during the game
+     *
+     * @param playerID String.
+     * @param command  char. Game instruction.
+     * @return GameState. THe updated game state.
+     */
+    public GameState makeMove(String playerID, char command) {
+        if (this.isPrimary()) {
+            this.gameState.move(playerID, command);
+        }
+        return this.gameState;
+    }
+
+    /**
+     * Helper method.
+     * This method is used to get a random player from a player list.
+     *
+     * @return String. player ID.
+     */
     private String getRandomPlayer() {
         boolean done = false;
         String selectedID = "";
@@ -269,13 +281,19 @@ public class Game implements GameInterface {
             selectedID = playerIDs.get(randInt);
 
             // If the selected player is the player itself, continue
-            if (! selectedID.equals(this.player.getplayerID())) {
+            if (!selectedID.equals(this.player.getplayerID())) {
                 done = true;
             }
         }
         return selectedID;
     }
 
+    /**
+     * Helper method.
+     * This method is used to get the primary and secondary server ID from a random player.
+     *
+     * @return String[]. An array of size 2 containing the primary server ID and secondary server ID.
+     */
     private String[] getServers() {
         String[] servers = new String[2];
         String randomPlayerID = "";
@@ -304,6 +322,156 @@ public class Game implements GameInterface {
         return servers;
     }
 
+    /**
+     * Remote method.
+     * Get primary server player ID.
+     *
+     * @return String. Primary server player ID.
+     */
+    public String getPrimary() {
+        return this.primary;
+    }
+
+    /**
+     * Remote method.
+     * Get secondary server player ID
+     *
+     * @return String. Secondary server player ID.
+     */
+    public String getSecondary() {
+        return this.secondary;
+    }
+
+    /**
+     * Local method.
+     * Check if a player is the primary server
+     *
+     * @return boolean. True indicates is primary server.
+     */
+    public boolean isPrimary() {
+        return this.isPrimary;
+    }
+
+    /**
+     * Local method.
+     * Set primary server player ID.
+     *
+     * @param primary
+     */
+    public void setPrimary(String primary) {
+        this.primary = primary;
+    }
+
+    /**
+     * Local method.
+     * Set a player to be the primary server.
+     *
+     * @param isPrimary boolean.
+     */
+    public void setIsPrimary(boolean isPrimary) {
+        if (isPrimary) {
+            this.isPrimary = true;
+        } else {
+            this.isSecondary = false;
+        }
+    }
+
+    /**
+     * Local method.
+     * Check if a player is the secondary server.
+     *
+     * @return boolean. True indicates is secondary server.
+     */
+    public boolean isSecondary() {
+        return this.isSecondary;
+    }
+
+    /**
+     * Local method.
+     * Set secondary server player ID.
+     *
+     * @param secondaryID String. Secondary server player ID.
+     */
+    public void setSecondary(String secondaryID) {
+        this.secondary = secondaryID;
+    }
+
+    /**
+     * Local method.
+     * Set a player to be the secondary server.
+     *
+     * @param isSecondary boolean.
+     */
+    public void setIsSecondary(boolean isSecondary) {
+        if (isSecondary) {
+            this.isSecondary = true;
+        } else {
+            this.isSecondary = false;
+        }
+    }
+
+    /**
+     * Local method.
+     * Get player's details.
+     *
+     * @return Player.
+     */
+    public Player getPlayer() {
+        return this.player;
+    }
+
+    /**
+     * Local method.
+     * Set player's details.
+     *
+     * @param portNo   int. Port number of the player.
+     * @param playerID String. Player ID.
+     * @param stub     GameInterface. Player's stub.
+     */
+    public void setPlayer(int portNo, String playerID, GameInterface stub) {
+        Player player = new Player(portNo, playerID, stub);
+        this.player = player;
+    }
+
+    /**
+     * Local method.
+     * Get local player list.
+     *
+     * @return PlayerList.
+     */
+    public PlayerList getPlayerList() {
+        return this.playerList;
+    }
+
+    /**
+     * Local method.
+     * Set local player list.
+     *
+     * @param playerList PlayerList.
+     */
+    public void setPlayerList(PlayerList playerList) {
+        this.playerList = playerList;
+    }
+
+    /**
+     * Remote method.
+     * Get game state.
+     *
+     * @return GameState.
+     */
+    public GameState getGameState() {
+        return this.gameState;
+    }
+
+    /**
+     * Local method.
+     * Set local game state.
+     *
+     * @param gameState GameState
+     */
+    public void setGameState(GameState gameState) {
+        this.gameState = gameState;
+    }
 
     public static void main(String[] args) {
 
@@ -336,23 +504,8 @@ public class Game implements GameInterface {
         // Set player field
         game.setPlayer(portNo, playerID, playerStub);
 
-        // Send new player info to tracker, and get n, k and player list from the tracker
-        try {
-            Registry registry = LocateRegistry.getRegistry(ip, portNo);
-            TrackerInterface trackerStub = (TrackerInterface) registry.lookup("Tracker");
-            Map<String, Object> parametersPlayers = trackerStub.addPlayer(game.player);
-            if (parametersPlayers == null) {
-                System.err.println("Add new player failed");
-                System.exit(1);
-            }
-            game.n = (int) parametersPlayers.get("N");
-            game.k = (int) parametersPlayers.get("K");
-            game.playerList = (PlayerList) parametersPlayers.get("PlayerList");
-        } catch (Exception e) {
-            System.err.println("Get registry exception: " + e.toString());
-            e.printStackTrace();
-            System.exit(1);
-        }
+        // Add the player to tracker, and update local n, k and player list
+        game.contactTracker(ip, portNo);
 
         // If there is only one player, set it as primary server
         if (game.playerList.getSize() == 1) {
@@ -361,7 +514,7 @@ public class Game implements GameInterface {
             game.startPrimary();
             System.out.println(game.getGameState().getGrid().toString());
 
-        // If there are two players, set the second one as secondary server
+            // If there are two players, set the second one as secondary server
         } else if (game.playerList.getSize() == 2) {
             game.setIsSecondary(true);
         }
@@ -376,7 +529,7 @@ public class Game implements GameInterface {
         }
 
         // Play
-//        game.play();
+        game.play();
 
     }
 
