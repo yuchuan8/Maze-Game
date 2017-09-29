@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import player.Player;
 
 /**
  * Created by chuanyu on 17/9/17.
@@ -13,21 +14,23 @@ public class GameState implements Serializable {
     private int n, k;
 
     // {userName: {score: , i: , j: ,}
-    private Map<String, Map<String, Integer>> states;
+    private Map<String, State> states;
     private Grid grid;
 
     public GameState(int n, int k) {
         this.n = n;
         this.k = k;
-        this.states = new HashMap<String, Map<String, Integer>>();
+        this.states = new HashMap<>();
         this.grid = new Grid(this.n);
     }
 
-    public void addPlayer(String uid) {
+    public void addPlayer(Player player) {
 
         boolean done = false;
         int i = 0;
         int j = 0;
+        State state;
+
         while (!done) {
             i = ThreadLocalRandom.current().nextInt(0, this.n);
             j = ThreadLocalRandom.current().nextInt(0, this.n);
@@ -35,33 +38,30 @@ public class GameState implements Serializable {
                 done = true;
             }
         }
-        Map<String, Integer> infoMap = new HashMap<String, Integer>();
-        infoMap.put("score", 0);
-        infoMap.put("i", i);
-        infoMap.put("j", j);
 
-        this.states.put(uid, infoMap);
+        state = new State(i, j, 0, player.getStub());
+        this.states.put(player.getplayerID(), state);
         this.grid.setOccupied(1, i, j);
     }
 
-    public void removePlayer(String uid) {
+    public void removePlayer(String playerID) {
 
-        Map<String, Integer> infoMap = this.states.get(uid);
+        State state = this.states.get(playerID);
 
         // set the cell empty
-        int i = infoMap.get("i");
-        int j = infoMap.get("j");
+        int i = state.getI();
+        int j = state.getJ();
         this.grid.setEmpty(i, j);
 
         // delete the player from game state
-        this.states.remove(uid);
+        this.states.remove(playerID);
 
     }
 
-    public void move(String uid, char command) {
-        Map<String, Integer> infoMap = this.states.get(uid);
-        int i = infoMap.get("i");
-        int j = infoMap.get("j");
+    public void move(String playerID, char command) {
+        State state = this.states.get(playerID);
+        int i = state.getI();
+        int j = state.getJ();
         boolean needTreasureCreation = false;
 
         switch (command) {
@@ -70,15 +70,15 @@ public class GameState implements Serializable {
 
                 if ((j != 0) && (!this.grid.isOccupiedByPlayer(i, j - 1))) {
                     // update location
-                    infoMap.put("j", j - 1);
+                    state.setJ(j - 1);
 
                     // update score
                     if (this.grid.isOccupiedByTreasure(i, j - 1)) {
-                        infoMap.put("score", infoMap.get("score") + 1);
+                        state.setScore(state.getScore() + 1);
                         needTreasureCreation = true;
                     }
 
-                    this.states.put(uid, infoMap);
+                    //this.states.put(playerID, newState);
 
                     // set the original location as empty
                     this.grid.setEmpty(i, j);
@@ -93,15 +93,14 @@ public class GameState implements Serializable {
                 if ((i != this.n - 1) && (!this.grid.isOccupiedByPlayer(i + 1, j))) {
 
                     // update location
-                    infoMap.put("i", i + 1);
+                    state.setI(i + 1);
 
                     // update score
                     if (this.grid.isOccupiedByTreasure(i + 1, j)) {
-                        infoMap.put("score", infoMap.get("score") + 1);
+                        state.setScore(state.getScore() + 1);
                         needTreasureCreation = true;
                     }
 
-                    this.states.put(uid, infoMap);
 
                     // set the original location as empty
                     this.grid.setEmpty(i, j);
@@ -117,15 +116,14 @@ public class GameState implements Serializable {
 
 
                     // update location
-                    infoMap.put("j", j + 1);
+                    state.setJ(j + 1);
 
                     // update score
                     if (this.grid.isOccupiedByTreasure(i, j + 1)) {
-                        infoMap.put("score", infoMap.get("score") + 1);
+                        state.setScore(state.getScore() + 1);
                         needTreasureCreation = true;
                     }
 
-                    this.states.put(uid, infoMap);
 
                     // set the original location as empty
                     this.grid.setEmpty(i, j);
@@ -140,15 +138,14 @@ public class GameState implements Serializable {
                 if ((i != 0) && (!this.grid.isOccupiedByPlayer(i - 1, j))) {
 
                     // update location
-                    infoMap.put("i", i - 1);
+                    state.setI(i - 1);
 
                     // update score
                     if (this.grid.isOccupiedByTreasure(i - 1, j)) {
-                        infoMap.put("score", infoMap.get("score") + 1);
+                        state.setScore(state.getScore() + 1);
                         needTreasureCreation = true;
                     }
 
-                    this.states.put(uid, infoMap);
 
                     // set the original location as empty
                     this.grid.setEmpty(i, j);
@@ -160,7 +157,7 @@ public class GameState implements Serializable {
 
             case '9':
                 // exit the game
-                this.removePlayer(uid);
+                this.removePlayer(playerID);
                 break;
             default:
                 break;
@@ -191,7 +188,7 @@ public class GameState implements Serializable {
         this.grid.setOccupied(2, i, j);
     }
 
-    public void createKTreuarues() {
+    public void createKTreasures() {
         // generate k random numbers in the range between 0 and n*n
         int[] randInts= ThreadLocalRandom.current().ints(0, this.n * this.n).distinct().limit(this.k).toArray();
 
@@ -207,7 +204,7 @@ public class GameState implements Serializable {
         return this.grid;
     }
 
-    public Map<String, Map<String, Integer>> getStates() {
+    public Map<String, State> getStates() {
         return this.states;
     }
 
@@ -218,14 +215,8 @@ public class GameState implements Serializable {
         while (itr.hasNext()) {
             String key = itr.next().toString();
             str += key + "-";
-            Map<String, Integer> infoMap = this.states.get(key);
-            Iterator itrInner = infoMap.keySet().iterator();
-            while (itrInner.hasNext()) {
-                String keyInner = itrInner.next().toString();
-                str += keyInner + ":";
-                str += infoMap.get(keyInner) + " ";
-            }
-            str += "\n";
+            State state = this.states.get(key);
+            str += "i: " + state.getI() + " j: " + state.getJ() + " score: " + state.getScore() + "\n";
         }
         return str;
     }

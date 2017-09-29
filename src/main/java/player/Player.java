@@ -23,9 +23,8 @@ public class Player implements Serializable {
      * @param playerID This defines player user name
      * @param ip This defines the player's IP address
      */
-    public Player(int portNo, String playerID, GameInterface stub) {
+    public Player(String playerID, GameInterface stub) {
         this.playerID = playerID;
-        this.portNo = portNo;
         this.stub = stub;
     }
 

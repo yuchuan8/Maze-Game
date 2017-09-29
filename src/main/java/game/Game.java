@@ -3,9 +3,6 @@ package game;
 import player.Player;
 import player.PlayerList;
 import tracker.TrackerInterface;
-import tracker.TrackerServer;
-
-import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -30,7 +27,7 @@ public class Game implements GameInterface {
     private GameState gameState;
 
 
-    public Game() {
+    private Game() {
         this.k = 0;
         this.n = 0;
         this.primary = null;
@@ -89,7 +86,7 @@ public class Game implements GameInterface {
     public boolean joinGame() {
 
         if (this.isPrimary()) {
-            this.gameState.addPlayer(this.player.getplayerID());
+            this.gameState.addPlayer(player);
             return true;
         }
 
@@ -161,7 +158,7 @@ public class Game implements GameInterface {
                 System.out.println(this.playerList.toString());
 
                 // Add the player to the game state
-                this.gameState.addPlayer(player.getplayerID());
+                this.gameState.addPlayer(player);
 
                 // If not primary server, update secondary server's game state
                 if (!this.isPrimary()) {
@@ -188,10 +185,10 @@ public class Game implements GameInterface {
      * This method is used by the primary server to start a new game. The primary server
      * creates a n by n grid and creates k treasures on the grid.
      */
-    public void startGame() {
+    private void startGame() {
         if (this.isPrimary()) {
             this.gameState = new GameState(this.n, this.k);
-            this.gameState.createKTreuarues();
+            this.gameState.createKTreasures();
         } else {
             System.err.println("Only primary server can start a new game");
         }
@@ -202,7 +199,7 @@ public class Game implements GameInterface {
      * THis method is used by players to play game. It waits for command and send it to the primary
      * server.
      */
-    public void play() {
+    private void play() {
         boolean playing = true;
         Scanner reader = new Scanner(System.in);
 
@@ -214,7 +211,7 @@ public class Game implements GameInterface {
             if (COMMANDS.contains(command)) {
 
                 // Get primary stub
-                GameInterface primaryStub = (GameInterface) this.playerList.getPlayer(this.primary).getStub();
+                GameInterface primaryStub = this.playerList.getPlayer(this.primary).getStub();
 
                 // Send move request to the primary server
                 GameState gameState = null;
@@ -296,7 +293,7 @@ public class Game implements GameInterface {
      */
     private String[] getServers() {
         String[] servers = new String[2];
-        String randomPlayerID = "";
+        String randomPlayerID;
         String primaryID = "";
         String secondaryID = "";
         boolean done = false;
@@ -424,12 +421,11 @@ public class Game implements GameInterface {
      * Local method.
      * Set player's details.
      *
-     * @param portNo   int. Port number of the player.
      * @param playerID String. Player ID.
      * @param stub     GameInterface. Player's stub.
      */
-    public void setPlayer(int portNo, String playerID, GameInterface stub) {
-        Player player = new Player(portNo, playerID, stub);
+    public void setPlayer(String playerID, GameInterface stub) {
+        Player player = new Player(playerID, stub);
         this.player = player;
     }
 
@@ -502,7 +498,7 @@ public class Game implements GameInterface {
         }
 
         // Set player field
-        game.setPlayer(portNo, playerID, playerStub);
+        game.setPlayer(playerID, playerStub);
 
         // Add the player to tracker, and update local n, k and player list
         game.contactTracker(ip, portNo);
