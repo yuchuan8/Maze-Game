@@ -207,6 +207,10 @@ public class GameState implements Serializable {
         return this.states;
     }
 
+    public State getStateByPlayerID(String playerID) {
+        return this.states.get(playerID);
+    }
+
     @Override
     public String toString() {
         String str = "";

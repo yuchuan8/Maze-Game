@@ -27,4 +27,6 @@ public interface GameInterface extends Remote {
 
     public void setSecondary(String secondaryID) throws RemoteException;
 
+    public void ping() throws RemoteException;
+
 }

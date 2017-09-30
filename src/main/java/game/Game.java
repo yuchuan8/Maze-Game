@@ -146,6 +146,34 @@ public class Game implements GameInterface {
         }
     }
 
+    public void ping() {}
+
+    public void pingServer() {
+
+
+
+        Timer timer = new Timer();
+
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                GameInterface stub = null;
+                if (Game.this.isPrimary()) {
+                    stub = Game.this.getGameState().getStateByPlayerID(Game.this.secondary).getStub();
+                } else if (Game.this.isSecondary()) {
+                    stub = Game.this.getGameState().getStateByPlayerID(Game.this.primary).getStub();
+                }
+                try {
+                    stub.ping();
+                    System.out.println("ping...");
+                } catch (Exception e) {
+                    System.err.println("Ping exception: " + e.toString());
+                    e.printStackTrace();
+                }
+            }
+        }, 500, 500);
+    }
+
     /**
      * Remote method
      * This method is used by the primary server to join a player to the game. The primary
@@ -529,12 +557,18 @@ public class Game implements GameInterface {
             // If there are two players, set the second one as secondary server
         } else if (game.playerList.getSize() == 1) {
             game.setIsSecondary(true);
+            game.setSecondary(game.getPlayer().getplayerID());
         }
+
+        System.out.println(game.getSecondary());
 
         // Join game
         boolean hasJoined = game.joinGame(trackerStub);
 
         if (hasJoined) {
+            if (game.isSecondary()) {
+                game.pingServer();
+            }
             System.out.println("Player has joined the game successfully");
             System.out.println(game.getGameState().toString());
             System.out.println(game.getGameState().getGrid().toString());
