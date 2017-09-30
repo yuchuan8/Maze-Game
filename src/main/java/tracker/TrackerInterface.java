@@ -26,7 +26,7 @@ public interface TrackerInterface extends Remote {
      * @param player This is the player to be added.
      * @throws RemoteException
      */
-    public Map<String, Object> addPlayer(Player player) throws RemoteException;
+    public void addPlayer(Player player) throws RemoteException;
 
     /**
      * This method remove a player from the Tracker player list.

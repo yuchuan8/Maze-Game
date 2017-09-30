@@ -78,7 +78,6 @@ public class GameState implements Serializable {
                         needTreasureCreation = true;
                     }
 
-                    //this.states.put(playerID, newState);
 
                     // set the original location as empty
                     this.grid.setEmpty(i, j);

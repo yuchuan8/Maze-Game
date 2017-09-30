@@ -68,13 +68,9 @@ public class TrackerServer implements TrackerInterface {
 	 * add one player
 	 * @param player
 	 */
-    public Map<String, Object> addPlayer(Player player) {
-    	boolean success = this.playerList.addPlayer(player);
-    	if (success) {
-    	    return this.returnParametersPlayers();
-        } else {
-    	    return null;
-        }
+    public void addPlayer(Player player) {
+    	this.playerList.addPlayer(player);
+        System.out.println(this.playerList.toString());
     }
 
 	/**

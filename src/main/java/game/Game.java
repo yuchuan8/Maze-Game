@@ -27,7 +27,7 @@ public class Game implements GameInterface {
     private GameState gameState;
 
 
-    private Game() {
+    public Game() {
         this.k = 0;
         this.n = 0;
         this.primary = null;
@@ -45,23 +45,16 @@ public class Game implements GameInterface {
      * their stub and pass it to the tracker. The tracker add the player / server to the player list,
      * and return n, k and player list which includes each player / server's stub.
      *
-     * @param ip     String. Tracker IP.
-     * @param portNo int. Tracker port number.
+     * @param trackerStub     Tracker stub.
      */
-    public void contactTracker(String ip, int portNo) {
+    public void contactTracker(TrackerInterface trackerStub) {
         try {
-
-            // Get tracker stub
-            Registry registry = LocateRegistry.getRegistry(ip, portNo);
-            TrackerInterface trackerStub = (TrackerInterface) registry.lookup("Tracker");
 
             // Add the new player to tracker player list, and get player list and paramters
             // from tracker
-            Map<String, Object> parametersPlayers = trackerStub.addPlayer(this.player);
-            if (parametersPlayers == null) {
-                System.err.println("Add new player failed");
-                System.exit(1);
-            }
+
+            //Map<String, Object> parametersPlayers = trackerStub.addPlayer(this.player);
+            Map<String, Object> parametersPlayers = trackerStub.returnParametersPlayers();
 
             // Update local n, k and player list
             this.n = (int) parametersPlayers.get("N");
@@ -83,10 +76,18 @@ public class Game implements GameInterface {
      *
      * @return boolean. True indicates success, false indicates failure.
      */
-    public boolean joinGame() {
+    public boolean joinGame(TrackerInterface trackerStub) {
 
+        // If it is the primary server, add itself to its own player list and
+        // asks the tracker to add it the tracker player list
         if (this.isPrimary()) {
-            this.gameState.addPlayer(player);
+            this.gameState.addPlayer(this.player);
+            try {
+                trackerStub.addPlayer(this.player);
+            } catch (Exception e) {
+                System.err.println("Updating tracker player list exception: " + e.toString());
+                e.printStackTrace();
+            }
             return true;
         }
 
@@ -115,6 +116,10 @@ public class Game implements GameInterface {
                 if (this.isSecondary) {
                     System.err.println("Secondary server is ready");
                 }
+
+                // Add the new player to the tracker player list only after the player
+                // is added to the primary server
+                trackerStub.addPlayer(this.player);
 
                 return true;
             }
@@ -153,18 +158,18 @@ public class Game implements GameInterface {
     public GameState joinGameServer(Player player) {
         if (this.isPrimary()) {
             try {
-                // Add a player to the player list
-                this.playerList.addPlayer(player);
-                System.out.println(this.playerList.toString());
+//                // Add a player to the player list
+//                this.playerList.addPlayer(player);
+//                System.out.println(this.playerList.toString());
 
                 // Add the player to the game state
                 this.gameState.addPlayer(player);
 
-                // If not primary server, update secondary server's game state
-                if (!this.isPrimary()) {
-                    GameInterface secondaryStub = this.playerList.getPlayer(this.secondary).getStub();
-                    secondaryStub.setGameState(this.gameState);
-                }
+//                // If not primary server, update secondary server's game state
+//                if (!this.isPrimary()) {
+//                    GameInterface secondaryStub = this.playerList.getPlayer(this.secondary).getStub();
+//                    secondaryStub.setGameState(this.gameState);
+//                }
                 return this.gameState;
 
             } catch (Exception e) {
@@ -211,7 +216,7 @@ public class Game implements GameInterface {
             if (COMMANDS.contains(command)) {
 
                 // Get primary stub
-                GameInterface primaryStub = this.playerList.getPlayer(this.primary).getStub();
+                GameInterface primaryStub = this.gameState.getStates().get(this.primary).getStub();
 
                 // Send move request to the primary server
                 GameState gameState = null;
@@ -484,6 +489,16 @@ public class Game implements GameInterface {
         int portNo = Integer.parseInt(args[1]);
         String playerID = args[2];
 
+        // Get tracker stub
+        TrackerInterface trackerStub = null;
+        try {
+            Registry registry = LocateRegistry.getRegistry(ip, portNo);
+            trackerStub = (TrackerInterface) registry.lookup("Tracker");
+        } catch (Exception e) {
+            System.err.println("Getting tracker exception: " + e.toString());
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         // Set players info based on input arguments
         Game game = new Game();
@@ -501,22 +516,23 @@ public class Game implements GameInterface {
         game.setPlayer(playerID, playerStub);
 
         // Add the player to tracker, and update local n, k and player list
-        game.contactTracker(ip, portNo);
+        game.contactTracker(trackerStub);
 
         // If there is only one player, set it as primary server
-        if (game.playerList.getSize() == 1) {
+        if (game.playerList.getSize() == 0) {
             game.setIsPrimary(true);
             game.setPrimary(game.getPlayer().getplayerID());
+            System.out.println(game.getPrimary());
             game.startPrimary();
             System.out.println(game.getGameState().getGrid().toString());
 
             // If there are two players, set the second one as secondary server
-        } else if (game.playerList.getSize() == 2) {
+        } else if (game.playerList.getSize() == 1) {
             game.setIsSecondary(true);
         }
 
         // Join game
-        boolean hasJoined = game.joinGame();
+        boolean hasJoined = game.joinGame(trackerStub);
 
         if (hasJoined) {
             System.out.println("Player has joined the game successfully");
