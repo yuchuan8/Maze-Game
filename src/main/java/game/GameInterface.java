@@ -33,4 +33,14 @@ public interface GameInterface extends Remote {
 
     public void ping() throws RemoteException;
 
+    public void gossipPushUpdatePrimary(PrimaryUpdate updateInformation) throws RemoteException;
+
+    public PrimaryUpdate gossipPullUpdatePrimary() throws RemoteException;
+
+    public void dealWithUnactivePlayer(String PlayerID) throws RemoteException;
+
+
+
+
+
 }
