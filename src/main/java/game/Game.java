@@ -30,8 +30,8 @@ public class Game implements GameInterface {
     public Game() {
         this.k = 0;
         this.n = 0;
-        this.primary = null;
-        this.secondary = null;
+        this.primary = "";
+        this.secondary = "";
         this.isPrimary = false;
         this.isSecondary = false;
         this.player = null;
@@ -136,42 +136,85 @@ public class Game implements GameInterface {
      * Local method.
      * This method is used to start the primary server.
      */
-    private void startPrimary() {
-        if (this.isPrimary()) {
-            this.startGame();
-            System.out.println(this.gameState.toString());
-            System.err.println("Primary server is ready");
-        } else {
-            System.err.println("This instance is not the primary server.");
-        }
+    public void startPrimary() {
+        this.setIsPrimary(true);
+        this.setPrimary(this.getPlayer().getplayerID());
+        this.startGame();
+        this.pingServer();
+        System.out.println(this.gameState.toString());
+        System.err.println("Primary server is ready");
+    }
+
+
+    public void startSecondary() {
+        this.setIsSecondary(true);
+        this.setSecondary(this.getPlayer().getplayerID());
+        this.pingServer();
     }
 
     public void ping() {}
 
     public void pingServer() {
-
-
-
         Timer timer = new Timer();
 
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                GameInterface stub = null;
+
+                // Get server stub
+                GameInterface serverStub = null;
                 if (Game.this.isPrimary()) {
-                    stub = Game.this.getGameState().getStateByPlayerID(Game.this.secondary).getStub();
+                    State state = Game.this.getGameState().getStateByPlayerID(Game.this.secondary);
+                    if (state != null) {
+                        serverStub = state.getStub();
+                    }
                 } else if (Game.this.isSecondary()) {
-                    stub = Game.this.getGameState().getStateByPlayerID(Game.this.primary).getStub();
+                    State state = Game.this.getGameState().getStateByPlayerID(Game.this.primary);
+                    if (state != null) {
+                        serverStub = state.getStub();
+                    }
                 }
-                try {
-                    stub.ping();
-                    System.out.println("ping...");
-                } catch (Exception e) {
-                    System.err.println("Ping exception: " + e.toString());
-                    e.printStackTrace();
+
+                // If server stub is not null, start pinging.
+                if (serverStub != null) {
+                    try {
+                        serverStub.ping();
+                        System.out.println("ping...");
+                    } catch (Exception e) {
+                        System.err.println("Ping exception: " + e.toString());
+                        e.printStackTrace();
+                    }
                 }
             }
         }, 500, 500);
+    }
+
+    private void recover(String serverType) {
+
+        // Recover the primary server
+        if (serverType == "primary") {
+
+            // Set the secondary server to be the primary server
+            this.setIsPrimary(true);
+
+
+            // Randomly select a server from game state
+            Random generator = new Random();
+            Object[] playerStates = this.getGameState().getStates().values().toArray();
+            State selectedPlayerState = (State) playerStates[generator.nextInt(playerStates.length)];
+            GameInterface selectedStub = selectedPlayerState.getStub();
+
+            // Sync game state and set the selected player as the new secondary
+            try {
+                selectedStub.setGameState(this.gameState);
+                selectedStub.setIsSecondary(true);
+            } catch (Exception e) {
+                System.err.println("Syncing game state error: " + e.toString());
+                e.printStackTrace();
+            }
+
+        }
+
     }
 
     /**
@@ -548,16 +591,13 @@ public class Game implements GameInterface {
 
         // If there is only one player, set it as primary server
         if (game.playerList.getSize() == 0) {
-            game.setIsPrimary(true);
-            game.setPrimary(game.getPlayer().getplayerID());
-            System.out.println(game.getPrimary());
             game.startPrimary();
+            System.out.println(game.getPrimary());
             System.out.println(game.getGameState().getGrid().toString());
 
             // If there are two players, set the second one as secondary server
         } else if (game.playerList.getSize() == 1) {
-            game.setIsSecondary(true);
-            game.setSecondary(game.getPlayer().getplayerID());
+            game.startSecondary();
         }
 
         System.out.println(game.getSecondary());
@@ -566,9 +606,6 @@ public class Game implements GameInterface {
         boolean hasJoined = game.joinGame(trackerStub);
 
         if (hasJoined) {
-            if (game.isSecondary()) {
-                game.pingServer();
-            }
             System.out.println("Player has joined the game successfully");
             System.out.println(game.getGameState().toString());
             System.out.println(game.getGameState().getGrid().toString());

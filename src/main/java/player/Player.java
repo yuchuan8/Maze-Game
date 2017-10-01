@@ -15,7 +15,6 @@ import java.util.*;
 public class Player implements Serializable {
 
     private String playerID;
-    private int portNo;
     private GameInterface stub;
 
     /**
