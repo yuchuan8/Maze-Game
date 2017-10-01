@@ -25,9 +25,9 @@ public interface GameInterface extends Remote {
 
     public String getSecondary() throws RemoteException;
 
-    public String setIsPrimary(boolean isPrimary) throws RemoteException;
+    public void setIsPrimary(boolean isPrimary) throws RemoteException;
 
-    public String setIsSecondary(boolean isSecondary) throws RemoteException;
+    public void setIsSecondary(boolean isSecondary) throws RemoteException;
 
     public void setSecondary(String secondaryID) throws RemoteException;
 
