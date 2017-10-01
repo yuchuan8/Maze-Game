@@ -1,6 +1,7 @@
 package game;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -209,6 +210,14 @@ public class GameState implements Serializable {
 
     public State getStateByPlayerID(String playerID) {
         return this.states.get(playerID);
+    }
+
+    public ArrayList getPlayerIDArrayList(){
+        ArrayList playerIDArrayList = new ArrayList();
+        for (String key : this.states.keySet()){
+            playerIDArrayList.add(key);
+        }
+        return playerIDArrayList;
     }
 
     @Override
