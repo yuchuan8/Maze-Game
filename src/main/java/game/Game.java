@@ -8,6 +8,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.spec.ECField;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -592,6 +593,88 @@ public class Game implements GameInterface {
             playerDealWithUnactivePlayer(PlayerID);
         }
 
+    }
+
+    private  void playerDealWithPrimaryDown(){
+        boolean keepContactSecondary = true;
+        while (keepContactSecondary) {
+            //first ask secondary for the new primary adress
+            State secondary = this.gameState.getStateByPlayerID(this.secondary);
+            GameInterface secondaryStub = secondary.getStub();
+            try {
+                PrimaryUpdate updateInformation = secondaryStub.gossipPullUpdatePrimary();
+                int updateVersion = updateInformation.getVersion();
+                if (updateVersion > this.version) {
+                    Player primary = updateInformation.getPrimary();
+                    Player secondry = updateInformation.getSecondry();
+                    this.primary = updateInformation.getPrimary().getplayerID();
+                    this.secondary = updateInformation.getSecondry().getplayerID();
+                    this.version = updateVersion;
+                    this.gameState.addPlayer(primary);
+                    this.gameState.addPlayer(secondry);
+                    try {
+                        State primaryState = this.gameState.getStateByPlayerID(this.primary);
+                        GameInterface primaryStub = primaryState.getStub();
+                        primaryStub.ping();
+                        keepContactSecondary = false;
+                    }catch (Exception e){
+                        keepContactSecondary = true;
+                    }
+                }
+            } catch (Exception e) {
+                playerDealWithSecondaryDown();
+            }
+
+        }
+
+    }
+    private void playerDealWithSecondaryDown(){
+        boolean keepPull = true;
+        try {
+            Map<String, Object> parameters = this.trackerStub.returnParametersPlayers();
+            PlayerList playerList = (PlayerList) parameters.get("PlayerList");
+            ArrayList playerIDArrayList = playerList.getPlayerIDArrayList();
+            if (playerIDArrayList.size() > 0) {
+                playerIDArrayList.remove(this.player.getplayerID());
+                    while (keepPull) {
+                        if (playerIDArrayList.size() > 0) {
+                        int rnd = new Random().nextInt(playerIDArrayList.size());
+                        //System.out.println(rnd);
+                        GameInterface nextStub = this.gameState.getStateByPlayerID((String) playerIDArrayList.get(rnd)).getStub();
+                        try {
+                            PrimaryUpdate updateInformation = nextStub.gossipPullUpdatePrimary();
+                            int updateVersion = updateInformation.getVersion();
+                            if (updateVersion > this.version) {
+                                Player primary = updateInformation.getPrimary();
+                                Player secondry = updateInformation.getSecondry();
+                                this.primary = updateInformation.getPrimary().getplayerID();
+                                this.secondary = updateInformation.getSecondry().getplayerID();
+                                this.version = updateVersion;
+                                this.gameState.addPlayer(primary);
+                                this.gameState.addPlayer(secondry);
+                                try {
+                                    State primaryState = this.gameState.getStateByPlayerID(this.primary);
+                                    GameInterface primaryStub = primaryState.getStub();
+                                    primaryStub.ping();
+                                    keepPull = false;
+                                }catch (Exception e){
+                                    keepPull = true;
+                                }
+                            }
+                        } catch (Exception e) {
+                            //if nextStub is down, delete it and go to next
+                            playerIDArrayList.remove(rnd);
+                        }
+                    }else{
+                            //if playerIDArrayList.size() == 0 which means all players are down
+                            //stop pull
+                            keepPull = false;
+                        }
+                }
+            }
+        }catch (Exception e){
+            //trcker will never down
+        }
     }
 
     private void randomlyGossipPushUpdatePrimary(PrimaryUpdate updateInformation){
