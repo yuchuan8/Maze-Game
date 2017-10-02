@@ -19,8 +19,8 @@ public class Player implements Serializable {
 
     /**
      * This method initialize a Player instance
-     * @param playerID This defines player user name
-     * @param ip This defines the player's IP address
+     * @param playerID
+     * @param stub
      */
     public Player(String playerID, GameInterface stub) {
         this.playerID = playerID;

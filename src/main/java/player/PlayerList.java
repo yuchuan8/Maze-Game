@@ -86,6 +86,14 @@ public class PlayerList implements Serializable{
     }
 
 
+    public ArrayList getPlayerIDArrayList(){
+        ArrayList playerIDArrayList = new ArrayList();
+        for (String key : this.players.keySet()){
+            playerIDArrayList.add(key);
+        }
+        return playerIDArrayList;
+    }
+
     @Override
     public String toString() {
         String str = "";

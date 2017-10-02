@@ -21,16 +21,38 @@ public interface GameInterface extends Remote {
 
     public void setGameState(GameState gameState) throws RemoteException;
 
+    public Player getPlayer() throws RemoteException;
+
     public String getPrimary() throws RemoteException;
 
     public String getSecondary() throws RemoteException;
 
-    public String setIsPrimary(boolean isPrimary) throws RemoteException;
+    public void setIsPrimary(boolean isPrimary) throws RemoteException;
 
-    public String setIsSecondary(boolean isSecondary) throws RemoteException;
+    public void setIsSecondary(boolean isSecondary) throws RemoteException;
+
+    public void setPrimary(String primaryID) throws RemoteException;
 
     public void setSecondary(String secondaryID) throws RemoteException;
 
+    public void startPrimary() throws RemoteException;
+
+    public void startSecondary() throws RemoteException;
+
     public void ping() throws RemoteException;
+
+    public void pingServer() throws RemoteException;
+
+    public boolean exitGameServer(String playerID) throws RemoteException;
+
+    public void gossipPushUpdatePrimary(PrimaryUpdate updateInformation) throws RemoteException;
+
+    public PrimaryUpdate gossipPullUpdatePrimary() throws RemoteException;
+
+    public void dealWithUnactivePlayer(String PlayerID) throws RemoteException;
+
+    public void setVersion(int version) throws RemoteException;
+
+
 
 }
