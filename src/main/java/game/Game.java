@@ -131,15 +131,12 @@ public class Game implements GameInterface {
 
                 return true;
             }
-
-
-
         } catch (Exception e) {
+            playerDealWithPrimaryDown();//xyx
             System.err.println("Couldn't join the game: " + e.toString());
             e.printStackTrace();
             return false;
         }
-
     }
 
     /**
@@ -151,7 +148,7 @@ public class Game implements GameInterface {
         this.setIsSecondary(false);
         this.setPrimary(this.getPlayer().getplayerID());
         this.pingServer();
-//        System.out.println(this.gameState.toString());
+        //System.out.println(this.gameState.toString());
         System.err.println("Primary server is ready");
     }
 
@@ -193,7 +190,7 @@ public class Game implements GameInterface {
                 if (serverStub != null) {
                     try {
                         serverStub.ping();
-                        System.out.println("ping " + monitoredServer);
+                        //System.out.println("ping " + monitoredServer);
                     } catch (Exception e) {
                         timer.cancel();
                         Game.this.recover(monitoredServer);
@@ -216,6 +213,7 @@ public class Game implements GameInterface {
             // Set the secondary server to be the primary server
             this.setIsPrimary(true);
             this.setIsSecondary(false);
+            this.setPrimary(this.player.getplayerID());
 
         } else if (serverType == "Secondary") {
 
@@ -223,6 +221,8 @@ public class Game implements GameInterface {
             this.gameState.removePlayer(this.secondary);
 
         }
+
+        this.version += 1;
 
         boolean done = false;
 
@@ -238,6 +238,9 @@ public class Game implements GameInterface {
                 // Set selected player as secondary server
                 selectedStub.setIsSecondary(true);
                 this.setSecondary(selectedStub.getPlayer().getplayerID());
+
+                // Sync version
+                selectedStub.setVersion(this.version);
 
                 // Start pinging the new secondary server
                 this.pingServer();
@@ -329,16 +332,21 @@ public class Game implements GameInterface {
             char command = reader.nextLine().charAt(0);
             if (COMMANDS.contains(command)) {
 
-                // Get primary stub
-                GameInterface primaryStub = this.gameState.getStates().get(this.primary).getStub();
-
-                // Send move request to the primary server
+                // Send move request to the primary server. If primary server is not reachable
+                // deal with exception and then keep trying to move
                 GameState gameState = null;
-                try {
-                    gameState = primaryStub.makeMove(this.player.getplayerID(), command);
-                } catch (Exception e) {
-                    System.err.println("Make move exception: " + e.toString());
-                    e.printStackTrace();
+                boolean done = false;
+                while (!done) {
+                    // Get primary stub
+                    GameInterface primaryStub = this.gameState.getStates().get(this.primary).getStub();
+                    try {
+                        gameState = primaryStub.makeMove(this.player.getplayerID(), command);
+                        done = true;
+                    } catch (Exception e) {
+                        playerDealWithPrimaryDown();//xyx
+                        System.err.println("Make move exception: " + e.toString());
+                        e.printStackTrace();
+                    }
                 }
 
                 // If primary returns game state, update the player game state.
@@ -664,38 +672,46 @@ public class Game implements GameInterface {
 
     }
 
-    private  void playerDealWithPrimaryDown(){
-        boolean keepContactSecondary = true;
-        while (keepContactSecondary) {
-            //first ask secondary for the new primary adress
-            State secondary = this.gameState.getStateByPlayerID(this.secondary);
-            GameInterface secondaryStub = secondary.getStub();
-            try {
-                PrimaryUpdate updateInformation = secondaryStub.gossipPullUpdatePrimary();
-                int updateVersion = updateInformation.getVersion();
-                if (updateVersion > this.version) {
-                    Player primary = updateInformation.getPrimary();
-                    Player secondry = updateInformation.getSecondry();
-                    this.primary = updateInformation.getPrimary().getplayerID();
-                    this.secondary = updateInformation.getSecondry().getplayerID();
-                    this.version = updateVersion;
-                    this.gameState.addPlayer(primary);
-                    this.gameState.addPlayer(secondry);
+    @Override
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    private  void playerDealWithPrimaryDown() {
+        if (!(isPrimary | isSecondary)) {//this player is not primary or secondary, just a player
+            boolean keepContactSecondary = true;
+            while (keepContactSecondary) {
+                //first ask secondary for the new primary adress
+                State secondary = this.gameState.getStateByPlayerID(this.secondary);
+                GameInterface secondaryStub = secondary.getStub();
+                try {
+                    PrimaryUpdate updateInformation = secondaryStub.gossipPullUpdatePrimary();
+                    int updateVersion = updateInformation.getVersion();
+                    System.out.println("asking secondary: version : " + updateVersion);
+                    if (updateVersion > this.version) {
+                        Player primary = updateInformation.getPrimary();
+                        Player secondry = updateInformation.getSecondry();
+                        this.primary = updateInformation.getPrimary().getplayerID();
+                        this.secondary = updateInformation.getSecondry().getplayerID();
+                        this.version = updateVersion;
+                        this.gameState.addPlayer(primary);
+                        this.gameState.addPlayer(secondry);
+                    }
                     try {
                         State primaryState = this.gameState.getStateByPlayerID(this.primary);
                         GameInterface primaryStub = primaryState.getStub();
                         primaryStub.ping();
                         keepContactSecondary = false;
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         keepContactSecondary = true;
                     }
+                } catch (Exception e) {
+                    playerDealWithSecondaryDown();
                 }
-            } catch (Exception e) {
-                playerDealWithSecondaryDown();
+
             }
 
         }
-
     }
     private void playerDealWithSecondaryDown(){
         boolean keepPull = true;
@@ -713,6 +729,7 @@ public class Game implements GameInterface {
                         try {
                             PrimaryUpdate updateInformation = nextStub.gossipPullUpdatePrimary();
                             int updateVersion = updateInformation.getVersion();
+                            System.out.println("pulling from player: version : " + updateVersion);
                             if (updateVersion > this.version) {
                                 Player primary = updateInformation.getPrimary();
                                 Player secondry = updateInformation.getSecondry();
@@ -721,14 +738,14 @@ public class Game implements GameInterface {
                                 this.version = updateVersion;
                                 this.gameState.addPlayer(primary);
                                 this.gameState.addPlayer(secondry);
-                                try {
-                                    State primaryState = this.gameState.getStateByPlayerID(this.primary);
-                                    GameInterface primaryStub = primaryState.getStub();
-                                    primaryStub.ping();
-                                    keepPull = false;
-                                }catch (Exception e){
-                                    keepPull = true;
-                                }
+                            }
+                            try {
+                                State primaryState = this.gameState.getStateByPlayerID(this.primary);
+                                GameInterface primaryStub = primaryState.getStub();
+                                primaryStub.ping();
+                                keepPull = false;
+                            }catch (Exception e){
+                                keepPull = true;
                             }
                         } catch (Exception e) {
                             //if nextStub is down, delete it and go to next
