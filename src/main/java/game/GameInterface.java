@@ -43,6 +43,8 @@ public interface GameInterface extends Remote {
 
     public void pingServer() throws RemoteException;
 
+    public boolean exitGameServer(String playerID) throws RemoteException;
+
     public void gossipPushUpdatePrimary(PrimaryUpdate updateInformation) throws RemoteException;
 
     public PrimaryUpdate gossipPullUpdatePrimary() throws RemoteException;

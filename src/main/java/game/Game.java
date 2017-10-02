@@ -359,6 +359,7 @@ public class Game implements GameInterface {
 
                 // Quit the game
                 if (command == '9') {
+                    this.exitGame();
                     playing = false;
                 }
 
@@ -370,6 +371,48 @@ public class Game implements GameInterface {
 
 
         }
+    }
+
+    public void exitGame() {
+        boolean done = false;
+        while (!done) {
+            GameInterface primaryStub = this.gameState.getStateByPlayerID(this.primary).getStub();
+            try {
+                primaryStub.exitGameServer(this.player.getplayerID());
+                done = true;
+            } catch (Exception e) {
+                this.playerDealWithPrimaryDown();
+                System.err.println("Contact primary exception: " + e.toString());
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    public boolean exitGameServer(String playerID) {
+        if (!this.isPrimary()) {
+            return false;
+        }
+
+        boolean trackerUpdated = false;
+        try {
+            this.trackerStub.removePlayer(playerID);
+            trackerUpdated = true;
+        } catch (Exception e) {
+            System.err.println("Contact tracker error: " + e.toString());
+        }
+
+        if (trackerUpdated) {
+            System.out.println("Now the game state is:");
+            System.out.println(this.gameState.toString());
+            System.out.println("playerID: " + playerID);
+            this.gameState.removePlayer(playerID);
+            this.updateSecondaryGameState();
+            System.out.println(this.gameState.toString());
+            return true;
+        }
+
+        return false;
     }
 
     /**

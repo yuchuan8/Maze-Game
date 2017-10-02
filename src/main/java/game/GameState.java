@@ -155,10 +155,6 @@ public class GameState implements Serializable {
                 }
                 break;
 
-            case '9':
-                // exit the game
-                this.removePlayer(playerID);
-                break;
             default:
                 break;
         }
