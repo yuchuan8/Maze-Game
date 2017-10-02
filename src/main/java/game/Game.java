@@ -3,6 +3,7 @@ package game;
 import player.Player;
 import player.PlayerList;
 import tracker.TrackerInterface;
+import gui.BaseDesktop;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -128,7 +129,6 @@ public class Game implements GameInterface {
                 // Add the new player to the tracker player list only after the player
                 // is added to the primary server
                 trackerStub.addPlayer(this.player);
-
                 return true;
             }
         } catch (Exception e) {
@@ -209,16 +209,27 @@ public class Game implements GameInterface {
 
             // Remove the old primary server from the game state
             this.gameState.removePlayer(this.primary);
+            try {
+                this.trackerStub.removePlayer(this.primary);
+            } catch (Exception e) {
+                
+            }
 
             // Set the secondary server to be the primary server
             this.setIsPrimary(true);
             this.setIsSecondary(false);
             this.setPrimary(this.player.getplayerID());
+            this.setSecondary(null);
 
         } else if (serverType == "Secondary") {
 
             // Remove the old secondary server from game state
             this.gameState.removePlayer(this.secondary);
+            try {
+                this.trackerStub.removePlayer(this.secondary);
+            } catch (Exception e) {
+
+            }
 
         }
 
@@ -284,6 +295,7 @@ public class Game implements GameInterface {
                     this.updateSecondaryGameState();
                 }
 
+                this.trackerStub.print(this.gameState.toString());
                 System.out.println(this.gameState.toString());
                 return this.gameState;
 
@@ -325,7 +337,11 @@ public class Game implements GameInterface {
         boolean playing = true;
         Scanner reader = new Scanner(System.in);
 
+//        BaseDesktop gui = new BaseDesktop(this.player, this.gameState);
+//        gui.DisplayGrid();
+
         while (playing) {
+
 
             // Ask user for input
             System.out.println("Please enter a command: ");

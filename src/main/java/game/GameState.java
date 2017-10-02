@@ -196,6 +196,14 @@ public class GameState implements Serializable {
         }
     }
 
+    public int getN() {
+        return this.n;
+    }
+
+    public int getK() {
+        return this.k;
+    }
+
     public Grid getGrid() {
         return this.grid;
     }

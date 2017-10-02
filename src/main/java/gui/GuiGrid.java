@@ -44,7 +44,7 @@ public class GuiGrid extends JInternalFrame {
         super("Maze Game", false, false, false, false);
 		
 	this.desktop = desktop;
-        this.gridDimension = 15;//gameState.getN 
+        this.gridDimension = gameState.getN();//gameState.getN
         this.game = game;
         this.player = player;//game.getPlayer();//????
         this.gameState = gameState;
@@ -80,8 +80,8 @@ public class GuiGrid extends JInternalFrame {
         }   
         
      
-        for(int i =0; i<15;i++){
-            for(int j =0;j<15;j++){
+        for(int i =0; i<gameState.getN();i++){
+            for(int j =0;j<gameState.getN();j++){
                 if(gameState.getGrid().isOccupiedByTreasure(i,j)==true){
                 String cor = i + "+" + j;
                 drawTreasure(gridMap.get(cor));
@@ -104,20 +104,20 @@ public class GuiGrid extends JInternalFrame {
         Border thickBorder = new LineBorder(Color.black, 2);
 	n.setBorder(thickBorder);
         
-        if(s==player.getplayerID()){
-            Border currentBorder = new LineBorder(Color.red, 2);
-            n.setBorder(currentBorder);
-        }
+//        if(s==player.getplayerID()){
+//            Border currentBorder = new LineBorder(Color.red, 2);
+//            n.setBorder(currentBorder);
+//        }
         
     }
     
     public void drawTreasure(JButton n){
-        ImageIcon icon = new ImageIcon("/Users/macbook/Documents/JavaLearn/MazeGame/diamond.png");
-        Image img = icon.getImage() ;  
-        Image newimg = img.getScaledInstance( 30, 30, java.awt.Image.SCALE_SMOOTH ) ;  
-        icon = new ImageIcon( newimg );
+//        ImageIcon icon = new ImageIcon("/Users/macbook/Documents/JavaLearn/MazeGame/diamond.png");
+//        Image img = icon.getImage() ;
+//        Image newimg = img.getScaledInstance( 30, 30, java.awt.Image.SCALE_SMOOTH ) ;
+//        icon = new ImageIcon( newimg );
                         
-        n.setIcon(icon);
+        n.setText("*");
     }
     
     private void setKeyListener(JButton jb) {

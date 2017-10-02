@@ -36,4 +36,6 @@ public interface TrackerInterface extends Remote {
      */
     public int removePlayer(String playerID) throws RemoteException;
 
+    public void print(String str) throws RemoteException;
+
 }
