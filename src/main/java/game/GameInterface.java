@@ -49,7 +49,7 @@ public interface GameInterface extends Remote {
 
     public void dealWithUnactivePlayer(String PlayerID) throws RemoteException;
 
-
+    public void setVersion(int version) throws RemoteException;
 
 
 
