@@ -1,5 +1,6 @@
 package game;
 
+import com.sun.xml.internal.rngom.parse.host.Base;
 import player.Player;
 import player.PlayerList;
 import tracker.TrackerInterface;
@@ -59,8 +60,7 @@ public class Game implements GameInterface {
 
             // Add the new player to tracker player list, and get player list and paramters
             // from tracker
-
-            //Map<String, Object> parametersPlayers = trackerStub.addPlayer(this.player);
+            trackerStub.addPlayer(this.player);
             Map<String, Object> parametersPlayers = trackerStub.returnParametersPlayers();
 
             // Update local n, k and player list
@@ -98,12 +98,12 @@ public class Game implements GameInterface {
         // asks the tracker to add it the tracker player list
         if (this.isPrimary()) {
             this.gameState.addPlayer(this.player);
-            try {
-                trackerStub.addPlayer(this.player);
-            } catch (Exception e) {
-                System.err.println("Updating tracker player list exception: " + e.toString());
-                e.printStackTrace();
-            }
+//            try {
+//                trackerStub.addPlayer(this.player);
+//            } catch (Exception e) {
+//                System.err.println("Updating tracker player list exception: " + e.toString());
+//                e.printStackTrace();
+//            }
             return true;
         }
 
@@ -136,9 +136,6 @@ public class Game implements GameInterface {
                     System.err.println("Secondary server is ready");
                 }
 
-                // Add the new player to the tracker player list only after the player
-                // is added to the primary server
-                trackerStub.addPlayer(this.player);
                 return true;
             }
         } catch (Exception e) {
@@ -208,7 +205,7 @@ public class Game implements GameInterface {
                 if (serverStub != null) {
                     try {
                         serverStub.ping();
-                        //System.out.println("ping " + monitoredServer);
+                        System.out.println("ping " + monitoredServer);
                     } catch (Exception e) {
                         timer.cancel();
                         Game.this.recover(monitoredServer);
@@ -227,6 +224,8 @@ public class Game implements GameInterface {
 
             // Remove the old primary server from the game state
             this.gameState.removePlayer(this.primary);
+
+            // Remove the old primary server from the tracker
             try {
                 this.trackerStub.removePlayer(this.primary);
             } catch (Exception e) {
@@ -243,6 +242,9 @@ public class Game implements GameInterface {
 
             // Remove the old secondary server from game state
             this.gameState.removePlayer(this.secondary);
+            this.setSecondary(null);
+
+            // Remove the old secondary from the tracker
             try {
                 this.trackerStub.removePlayer(this.secondary);
             } catch (Exception e) {
@@ -252,9 +254,14 @@ public class Game implements GameInterface {
         }
 
         this.version += 1;
-        System.out.println("after recover, version is "+ this.version);
+//        System.out.println("after recover, version is "+ this.version);
 
         boolean done = false;
+
+        // If there is only one player in the game state, do not try to find a secondary server
+        if (this.gameState.getStates().size() == 1) {
+            return;
+        }
 
         while (!done) {
             // Randomly select a server from game state
@@ -350,6 +357,11 @@ public class Game implements GameInterface {
      * server.
      */
     private void play() {
+
+        BaseDesktop baseDesktop = new BaseDesktop(this.player, this.gameState);
+//        baseDesktop.DisplayGrid();
+//        baseDesktop.DisplayScores();
+
         boolean playing = true;
         Scanner reader = new Scanner(System.in);
 
@@ -357,7 +369,6 @@ public class Game implements GameInterface {
 //        gui.DisplayGrid();
 
         while (playing) {
-
 
             // Ask user for input
             System.out.println("Please enter a command: ");
@@ -385,6 +396,7 @@ public class Game implements GameInterface {
                 // Else the move is not allowed
                 if (gameState != null) {
                     this.setGameState(gameState);
+                    baseDesktop.refresh(this.gameState);
                 } else {
                     System.out.println("The move request was declined");
                 }
@@ -457,8 +469,14 @@ public class Game implements GameInterface {
      */
     public synchronized GameState makeMove(String playerID, char command) {
         if (this.isPrimary()) {
+
+            // Make move
             this.gameState.move(playerID, command);
-            this.updateSecondaryGameState();
+
+            // If secondary is not null, sync the game state over
+            if (this.secondary != null) {
+                this.updateSecondaryGameState();
+            }
         }
         return this.gameState;
     }
@@ -481,12 +499,17 @@ public class Game implements GameInterface {
     private String getRandomPlayerFromGameState() {
         Random generator = new Random();
         Object[] playerIDs = this.getGameState().getStates().keySet().toArray();
+        System.out.println("playerIDs length: " + playerIDs.length);
 
         boolean done = false;
         String selectedID = "";
 
         while (!done) {
-            selectedID = (String) playerIDs[generator.nextInt(playerIDs.length)];
+            if (playerIDs.length == 1) {
+                selectedID = (String) playerIDs[0];
+            } else {
+                selectedID = (String) playerIDs[generator.nextInt(playerIDs.length)];
+            }
             if (!selectedID.equals(this.player.getplayerID())) {
                 done = true;
             }
@@ -853,8 +876,8 @@ public class Game implements GameInterface {
 
     private void randomlyGossipPushUpdatePrimary(PrimaryUpdate updateInformation){
         ArrayList playerIDList = this.gameState.getPlayerIDArrayList();
-        System.out.println(playerIDList);
-        System.out.println("version is :" + this.version);
+//        System.out.println(playerIDList);
+//        System.out.println("version is :" + this.version);
         if(playerIDList.size() > 0) {
             playerIDList.remove(this.player.getplayerID());
             if (playerIDList.size() > 0) {
@@ -959,14 +982,14 @@ public class Game implements GameInterface {
         game.contactTracker(trackerStub);
 
         // If there is only one player, set it as primary server
-        if (game.playerList.getSize() == 0) {
+        if (game.playerList.getSize() == 1) {
             game.startPrimary();
             game.startGame();
             System.out.println(game.getPrimary());
             System.out.println(game.getGameState().getGrid().toString());
 
             // If there are two players, set the second one as secondary server
-        } else if (game.playerList.getSize() == 1) {
+        } else if (game.playerList.getSize() == 2) {
             game.startSecondary();
         }
 
@@ -989,9 +1012,9 @@ public class Game implements GameInterface {
         long interval = 500;
         timer.schedule(new TimerTask(){
             public void run() {
-                System.out.println("priamry is " + game.primary);
-                System.out.println("secondary is " + game.secondary);
-                System.out.println("version is "+ game.version);
+//                System.out.println("priamry is " + game.primary);
+//                System.out.println("secondary is " + game.secondary);
+//                System.out.println("version is "+ game.version);
                 //System.out.println("\n");
 //                System.out.println(game.gameState.getPlayerIDArrayList());
                 game.randomlyGossipPushUpdatePrimary(game.generatePrimaryUpdate());
