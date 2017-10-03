@@ -252,7 +252,7 @@ public class Game implements GameInterface {
         }
 
         this.version += 1;
-        System.out.println("after recover, version is "+ this.version);
+//        System.out.println("after recover, version is "+ this.version);
 
         boolean done = false;
 
@@ -457,8 +457,14 @@ public class Game implements GameInterface {
      */
     public synchronized GameState makeMove(String playerID, char command) {
         if (this.isPrimary()) {
+
+            // Make move
             this.gameState.move(playerID, command);
-            this.updateSecondaryGameState();
+
+            // If secondary is not null, sync the game state over
+            if (this.secondary != null) {
+                this.updateSecondaryGameState();
+            }
         }
         return this.gameState;
     }
@@ -853,8 +859,8 @@ public class Game implements GameInterface {
 
     private void randomlyGossipPushUpdatePrimary(PrimaryUpdate updateInformation){
         ArrayList playerIDList = this.gameState.getPlayerIDArrayList();
-        System.out.println(playerIDList);
-        System.out.println("version is :" + this.version);
+//        System.out.println(playerIDList);
+//        System.out.println("version is :" + this.version);
         if(playerIDList.size() > 0) {
             playerIDList.remove(this.player.getplayerID());
             if (playerIDList.size() > 0) {
@@ -989,9 +995,9 @@ public class Game implements GameInterface {
         long interval = 500;
         timer.schedule(new TimerTask(){
             public void run() {
-                System.out.println("priamry is " + game.primary);
-                System.out.println("secondary is " + game.secondary);
-                System.out.println("version is "+ game.version);
+//                System.out.println("priamry is " + game.primary);
+//                System.out.println("secondary is " + game.secondary);
+//                System.out.println("version is "+ game.version);
                 //System.out.println("\n");
 //                System.out.println(game.gameState.getPlayerIDArrayList());
                 game.randomlyGossipPushUpdatePrimary(game.generatePrimaryUpdate());
