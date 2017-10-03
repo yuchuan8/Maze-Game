@@ -42,7 +42,8 @@ public class Game implements GameInterface {
         this.isSecondary = false;
         this.player = null;
         this.playerList = new PlayerList();
-        this.gameState = null;
+        this.gameState = new GameState(15,15);
+        this.version = 0;
     }
 
     /**
@@ -66,11 +67,20 @@ public class Game implements GameInterface {
             this.n = (int) parametersPlayers.get("N");
             this.k = (int) parametersPlayers.get("K");
             this.playerList = (PlayerList) parametersPlayers.get("PlayerList");
-
+            initialGameStateFromPlayerList(this.playerList); // xyx
         } catch (Exception e) {
             System.err.println("Get registry exception: " + e.toString());
             e.printStackTrace();
             System.exit(1);
+        }
+    }
+    //xyx
+    private void initialGameStateFromPlayerList(PlayerList playerlist){
+        Map<String, Player> players = playerlist.getPlayers();
+        if(players != null) {
+            for (String key : players.keySet()) {
+                this.gameState.addPlayer(players.get(key));
+            }
         }
     }
 
@@ -133,9 +143,17 @@ public class Game implements GameInterface {
             }
         } catch (Exception e) {
             playerDealWithPrimaryDown();//xyx
-            System.err.println("Couldn't join the game: " + e.toString());
-            e.printStackTrace();
-            return false;
+            try{
+                GameInterface primaryStub = this.playerList.getPlayer(this.primary).getStub();
+                this.gameState = primaryStub.joinGameServer(this.player);
+                trackerStub.addPlayer(this.player);
+                return true;
+            }catch (Exception ee){
+                System.err.println("Couldn't join the game: " + e.toString());
+                e.printStackTrace();
+                return false;
+            }
+
         }
     }
 
@@ -234,6 +252,7 @@ public class Game implements GameInterface {
         }
 
         this.version += 1;
+        System.out.println("after recover, version is "+ this.version);
 
         boolean done = false;
 
@@ -304,9 +323,6 @@ public class Game implements GameInterface {
                 e.printStackTrace();
                 return null;
             }
-
-
-
 
         } else {
             System.err.println("Can only join game via the primary server");
@@ -439,7 +455,7 @@ public class Game implements GameInterface {
      * @param command  char. Game instruction.
      * @return GameState. THe updated game state.
      */
-    public GameState makeMove(String playerID, char command) {
+    public synchronized GameState makeMove(String playerID, char command) {
         if (this.isPrimary()) {
             this.gameState.move(playerID, command);
             this.updateSecondaryGameState();
@@ -526,6 +542,7 @@ public class Game implements GameInterface {
                 GameInterface stub = this.playerList.getPlayer(randomPlayerID).getStub();
                 primaryID = stub.getPrimary();
                 secondaryID = stub.getSecondary();
+                this.gameState = stub.getGameState();
                 done = true;
             } catch (Exception e) {
                 System.err.println("Remote invocation exception: " + e.toString());
@@ -742,29 +759,36 @@ public class Game implements GameInterface {
             while (keepContactSecondary) {
                 //first ask secondary for the new primary adress
                 State secondary = this.gameState.getStateByPlayerID(this.secondary);
-                GameInterface secondaryStub = secondary.getStub();
-                try {
-                    PrimaryUpdate updateInformation = secondaryStub.gossipPullUpdatePrimary();
-                    int updateVersion = updateInformation.getVersion();
-                    System.out.println("asking secondary: version : " + updateVersion);
-                    if (updateVersion > this.version) {
-                        Player primary = updateInformation.getPrimary();
-                        Player secondry = updateInformation.getSecondry();
-                        this.primary = updateInformation.getPrimary().getplayerID();
-                        this.secondary = updateInformation.getSecondry().getplayerID();
-                        this.version = updateVersion;
-                        this.gameState.addPlayer(primary);
-                        this.gameState.addPlayer(secondry);
-                    }
+                if(secondary != null) {
+                    GameInterface secondaryStub = secondary.getStub();
                     try {
-                        State primaryState = this.gameState.getStateByPlayerID(this.primary);
-                        GameInterface primaryStub = primaryState.getStub();
-                        primaryStub.ping();
-                        keepContactSecondary = false;
+                        System.out.println("contacting secondary");
+                        PrimaryUpdate updateInformation = secondaryStub.gossipPullUpdatePrimary();
+                        int updateVersion = updateInformation.getVersion();
+                        System.out.println("asking secondary: version : " + updateVersion);
+                        if (updateVersion > this.version) {
+                            Player primary = updateInformation.getPrimary();
+                            Player secondry = updateInformation.getSecondry();
+                            this.primary = updateInformation.getPrimary().getplayerID();
+                            this.secondary = updateInformation.getSecondry().getplayerID();
+                            this.version = updateVersion;
+                            this.gameState.addPlayer(primary);
+                            this.gameState.addPlayer(secondry);
+                        }
+                        try {
+                            State primaryState = this.gameState.getStateByPlayerID(this.primary);
+                            GameInterface primaryStub = primaryState.getStub();
+                            primaryStub.ping();
+                            keepContactSecondary = false;
+                        } catch (Exception e) {
+                            keepContactSecondary = true;
+                        }
                     } catch (Exception e) {
-                        keepContactSecondary = true;
+                        playerDealWithSecondaryDown();
+                        keepContactSecondary = false;
                     }
-                } catch (Exception e) {
+                }else{
+                    keepContactSecondary = false;
                     playerDealWithSecondaryDown();
                 }
 
@@ -789,14 +813,19 @@ public class Game implements GameInterface {
                             PrimaryUpdate updateInformation = nextStub.gossipPullUpdatePrimary();
                             int updateVersion = updateInformation.getVersion();
                             System.out.println("pulling from player: version : " + updateVersion);
+                            System.out.println("current version: " + this.version);
                             if (updateVersion > this.version) {
                                 Player primary = updateInformation.getPrimary();
                                 Player secondry = updateInformation.getSecondry();
-                                this.primary = updateInformation.getPrimary().getplayerID();
-                                this.secondary = updateInformation.getSecondry().getplayerID();
+                                if(primary != null) {
+                                    this.primary = primary.getplayerID();
+                                    this.gameState.addPlayer(primary);
+                                }
+                                if(secondry != null) {
+                                    this.secondary = secondry.getplayerID();
+                                    this.gameState.addPlayer(secondry);
+                                }
                                 this.version = updateVersion;
-                                this.gameState.addPlayer(primary);
-                                this.gameState.addPlayer(secondry);
                             }
                             try {
                                 State primaryState = this.gameState.getStateByPlayerID(this.primary);
@@ -824,8 +853,8 @@ public class Game implements GameInterface {
 
     private void randomlyGossipPushUpdatePrimary(PrimaryUpdate updateInformation){
         ArrayList playerIDList = this.gameState.getPlayerIDArrayList();
-//        System.out.println(playerIDList);
-//        System.out.println("version is :" + this.version);
+        System.out.println(playerIDList);
+        System.out.println("version is :" + this.version);
         if(playerIDList.size() > 0) {
             playerIDList.remove(this.player.getplayerID());
             if (playerIDList.size() > 0) {
@@ -833,7 +862,8 @@ public class Game implements GameInterface {
 //                System.out.println(rnd);
                 GameInterface nextStub = this.gameState.getStateByPlayerID((String) playerIDList.get(rnd)).getStub();
                 try {
-                    nextStub.gossipPushUpdatePrimary(updateInformation);
+                    //nextStub.gossipPushUpdatePrimary(updateInformation);
+                    nextStub.ping();
                 } catch (Exception e) {
                     State primary = this.gameState.getStateByPlayerID(this.primary);
                     GameInterface primaryStub = primary.getStub();
@@ -951,22 +981,23 @@ public class Game implements GameInterface {
             System.out.println(game.getGameState().getGrid().toString());
         }
 
-//        //xyx add
-//        //begine gossip 2 seconds later
-//        //and run it every 1 second
-//        Timer timer = new Timer();
-//        long delay = 2000;
-//        long interval = 2000;
-//        timer.schedule(new TimerTask(){
-//            public void run() {
-////                System.out.println("priamry is " + game.primary);
-////                System.out.println("secondary is " + game.secondary);
-//                //System.out.println("\n");
-////                System.out.println(game.gameState.getPlayerIDArrayList());
-//                game.randomlyGossipPushUpdatePrimary(game.generatePrimaryUpdate());
-//
-//            }
-//        }, delay, interval);
+        //xyx add
+        //begine gossip 2 seconds later
+        //and run it every 1 second
+        Timer timer = new Timer();
+        long delay = 100;
+        long interval = 500;
+        timer.schedule(new TimerTask(){
+            public void run() {
+                System.out.println("priamry is " + game.primary);
+                System.out.println("secondary is " + game.secondary);
+                System.out.println("version is "+ game.version);
+                //System.out.println("\n");
+//                System.out.println(game.gameState.getPlayerIDArrayList());
+                game.randomlyGossipPushUpdatePrimary(game.generatePrimaryUpdate());
+
+            }
+        }, delay, interval);
 
         // Play
         game.play();
