@@ -17,6 +17,8 @@ import java.awt.Container;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import javax.swing.*;
+
+import game.GameInterface;
 import player.Player;
 import game.GameState;
 import game.Game;
@@ -37,6 +39,8 @@ public class BaseDesktop extends JFrame implements WindowListener {
     private Player player;
     private GameState gameState;
     private Game game;
+    private GuiGrid gridMap;
+    private ScoreScroll scorePane;
     
     public BaseDesktop(Player player, GameState gameState){
         super();
@@ -48,10 +52,21 @@ public class BaseDesktop extends JFrame implements WindowListener {
         setSize(width, height);
         setTitle("Maze Game - Player: " + player.getplayerID());
         window = new JDesktopPane();
-	window.setBackground(Color.GRAY);        
-	c.add(window, BorderLayout.CENTER);
+	    window.setBackground(Color.GRAY);
+	    c.add(window, BorderLayout.CENTER);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
+
+        this.gridMap = new GuiGrid(this, this.gameState);
+        this.AddInternalFrame(gridMap);
+        gridMap.setLocation(280, 10);
+
+        this.scorePane = new ScoreScroll(this.gameState);
+        this.AddInternalFrame(scorePane);
+    }
+
+    public void refresh(GameState gs) {
+        this.gridMap.refreshState(gs);
     }
     
     public void DisplayGrid(){
@@ -60,12 +75,15 @@ public class BaseDesktop extends JFrame implements WindowListener {
         AddInternalFrame(gridMap);
         gridMap.setLocation(280, 10);      
     }
+
+
     public void DisplayScores(){
         ScoreScroll scorePane;
         scorePane =new ScoreScroll(gameState);
         AddInternalFrame(scorePane);
               
     }
+
     private void AddInternalFrame(JInternalFrame f){
         window.add(f);
         f.setVisible(true);
