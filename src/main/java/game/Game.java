@@ -198,7 +198,7 @@ public class Game implements GameInterface {
                 if (serverStub != null) {
                     try {
                         serverStub.ping();
-//                        System.out.println("ping " + monitoredServer);
+                        System.out.println("ping " + monitoredServer);
                     } catch (Exception e) {
                         timer.cancel();
                         Game.this.recover(monitoredServer);
@@ -214,7 +214,7 @@ public class Game implements GameInterface {
 
         // Recover the primary server
         if (serverType == "Primary") {
-
+            System.out.println("recovering primary");
             // Remove the old primary server from the game state
             this.gameState.removePlayer(this.primary);
 
@@ -232,7 +232,7 @@ public class Game implements GameInterface {
             this.setSecondary(null);
 
         } else if (serverType == "Secondary") {
-
+            System.out.println("recovering secondary");
             // Remove the old secondary server from game state
             this.gameState.removePlayer(this.secondary);
             this.setSecondary(null);
@@ -767,18 +767,22 @@ public class Game implements GameInterface {
         if(updateVersion > this.version){
             Player primary = updateInformation.getPrimary();
             Player secondry = updateInformation.getSecondry();
-            this.primary = primary.getplayerID();
-            this.secondary = secondry.getplayerID();
+            if(primary != null){
+                this.primary = primary.getplayerID();
+                this.gameState.addPlayer(primary);
+            }
+            if(secondry != null){
+                this.secondary = secondry.getplayerID();
+                this.gameState.addPlayer(secondry);
+            }
             this.version = updateVersion;
-            this.gameState.addPlayer(primary);
-            this.gameState.addPlayer(secondry);
         }
     }
 
     @Override
     public void dealWithUnactivePlayer(String PlayerID) throws RemoteException {
         if(this.isPrimary){
-            primaryDealWithUnactivePlayer(PlayerID);
+            primaryDealWithUnactivePlayer(PlayerID, this.primary);
         }else if(this.isSecondary){
             secondaryDealWithUnactivePlayer(PlayerID);
         }else{
@@ -892,8 +896,8 @@ public class Game implements GameInterface {
 
     private void randomlyGossipPushUpdatePrimary(PrimaryUpdate updateInformation){
         ArrayList playerIDList = this.gameState.getPlayerIDArrayList();
-//        System.out.println(playerIDList);
-//        System.out.println("version is :" + this.version);
+        System.out.println(playerIDList);
+        System.out.println("version is :" + this.version);
         if(playerIDList.size() > 0) {
             playerIDList.remove(this.player.getplayerID());
             if (playerIDList.size() > 0) {
@@ -901,9 +905,11 @@ public class Game implements GameInterface {
 //                System.out.println(rnd);
                 GameInterface nextStub = this.gameState.getStateByPlayerID((String) playerIDList.get(rnd)).getStub();
                 try {
-                    //nextStub.gossipPushUpdatePrimary(updateInformation);
-                    nextStub.ping();
+                    System.out.println("going to ping this player:" + (String) playerIDList.get(rnd));
+                    nextStub.gossipPushUpdatePrimary(updateInformation);
+                    //nextStub.ping();
                 } catch (Exception e) {
+                    System.out.println("player down:" + (String) playerIDList.get(rnd));
                     State primary = this.gameState.getStateByPlayerID(this.primary);
                     GameInterface primaryStub = primary.getStub();
                     try {
@@ -921,25 +927,43 @@ public class Game implements GameInterface {
         }
     }
 
-    private void primaryDealWithUnactivePlayer(String PlayerID) throws RemoteException {
+    private PlayerList generatePlayerlistFromGameState(GameState gameState){
+        PlayerList playerList = new PlayerList();
+        Map<String, State> states = gameState.getStates();
+        for(String key : states.keySet()){
+            GameInterface stub = states.get(key).getStub();
+            Player player = new Player(key,stub);
+            playerList.addPlayer(player);
+        }
+        return playerList;
+    }
+
+
+    private void primaryDealWithUnactivePlayer(String PlayerID, String reporterID) throws RemoteException {
         State playerToBeDelete = this.gameState.getStateByPlayerID(PlayerID);
         if (playerToBeDelete != null) {
-            int TrackerDeleteSucc = this.trackerStub.removePlayer(PlayerID);//let tracker delete first
-            System.out.println("TrackerDeleteSucc" + TrackerDeleteSucc);
-            if (TrackerDeleteSucc == 1) {//tracker delete success
-                System.out.println("get secondary");
-                State secondary = this.gameState.getStateByPlayerID(this.secondary);
-                GameInterface secondaryStub = secondary.getStub();
-                System.out.println("send unactive player to secondary");
-                try {
-                    secondaryStub.dealWithUnactivePlayer(PlayerID);//let secondary delete
-                } catch (Exception e) {
-
-                }
-                System.out.println("secondary dealed with it");
-                this.gameState.removePlayer(PlayerID);//primary itself delete
+            System.out.println("This player report:"+ reporterID);
+            if(PlayerID.equals(this.secondary)){
+                System.out.println(PlayerID + "this player is secondary, do nothing");
+                //this.secondary = null;//if secondary is down, do nothing.
+            }else {
                 System.out.println("Primary remove player:" + PlayerID);
-                this.version = this.version + 1;
+                this.gameState.removePlayer(PlayerID);//primary itself delete
+                if(this.isPrimary) {
+                    this.version = this.version + 1;
+                }
+            }
+
+            PlayerList playerList = generatePlayerlistFromGameState(this.gameState);
+            this.trackerStub.updatePlayerList(playerList);//let tracker delete first
+            System.out.println("get secondary");
+            State secondary = this.gameState.getStateByPlayerID(this.secondary);
+            GameInterface secondaryStub = secondary.getStub();
+            System.out.println("send unactive player to secondary");
+            try {
+                secondaryStub.dealWithUnactivePlayer(PlayerID);//let secondary delete
+            } catch (Exception e) {
+
             }
         }
     }
@@ -1033,8 +1057,8 @@ public class Game implements GameInterface {
         long interval = 500;
         timer.schedule(new TimerTask(){
             public void run() {
-//                System.out.println("priamry is " + game.primary);
-//                System.out.println("secondary is " + game.secondary);
+                System.out.println("priamry is " + game.primary);
+                System.out.println("secondary is " + game.secondary);
 //                System.out.println("version is "+ game.version);
                 //System.out.println("\n");
 //                System.out.println(game.gameState.getPlayerIDArrayList());
