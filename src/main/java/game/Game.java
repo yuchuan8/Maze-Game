@@ -1,6 +1,5 @@
 package game;
 
-import com.sun.xml.internal.rngom.parse.host.Base;
 import player.Player;
 import player.PlayerList;
 import tracker.TrackerInterface;
@@ -19,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Game implements GameInterface {
 
-    static private List<Character> COMMANDS = new ArrayList<Character>(Arrays.asList('0', '1', '2', '3', '4', '9'));
+    static private List<Character> COMMANDS = new ArrayList<Character>(Arrays.asList('0', '1', '2', '3', '4', '9', 'p'));
 
     private String primary;
     private String secondary;
@@ -98,12 +97,6 @@ public class Game implements GameInterface {
         // asks the tracker to add it the tracker player list
         if (this.isPrimary()) {
             this.gameState.addPlayer(this.player);
-//            try {
-//                trackerStub.addPlayer(this.player);
-//            } catch (Exception e) {
-//                System.err.println("Updating tracker player list exception: " + e.toString());
-//                e.printStackTrace();
-//            }
             return true;
         }
 
@@ -121,9 +114,9 @@ public class Game implements GameInterface {
             this.gameState = primaryStub.joinGameServer(this.player);
 
             // If it is secondary server, update primary server with secondary server ID
-            if (this.isSecondary()) {
-                primaryStub.setSecondary(this.player.getplayerID());
-            }
+//            if (this.isSecondary()) {
+//                primaryStub.setSecondary(this.player.getplayerID());
+//            }
 
             // If received game state from primary, the player joins the game successfully
             if (this.gameState == null) {
@@ -205,7 +198,7 @@ public class Game implements GameInterface {
                 if (serverStub != null) {
                     try {
                         serverStub.ping();
-                        System.out.println("ping " + monitoredServer);
+//                        System.out.println("ping " + monitoredServer);
                     } catch (Exception e) {
                         timer.cancel();
                         Game.this.recover(monitoredServer);
@@ -298,6 +291,9 @@ public class Game implements GameInterface {
 
         }
 
+        System.out.println("primary: " + this.primary);
+        System.out.println("secondary: " + this.secondary);
+
 
     }
 
@@ -315,6 +311,16 @@ public class Game implements GameInterface {
             try {
                 // Add the player to the game state
                 this.gameState.addPlayer(player);
+
+                if (this.secondary == null) {
+                    this.secondary = player.getplayerID();
+                    GameInterface playerStub = player.getStub();
+                    try {
+                        playerStub.startSecondary();
+                    } catch (Exception e) {
+                        System.err.println("Starting secondary exception: " + e.toString());
+                    }
+                }
 
                 // Sync the game state with the secondary server
                 if (this.secondary != null) {
@@ -407,6 +413,13 @@ public class Game implements GameInterface {
                     playing = false;
                 }
 
+                if (command == 'p') {
+                    System.out.println("Is primary: " + this.isPrimary());
+                    System.out.println("Is secondary: " + this.isSecondary());
+                    System.out.println("Primary is: " + this.primary);
+                    System.out.println("Secondary is: " + this.secondary);
+                }
+
                 System.out.println(this.gameState.getGrid().toString());
 
             } else {
@@ -451,7 +464,9 @@ public class Game implements GameInterface {
             System.out.println(this.gameState.toString());
             System.out.println("playerID: " + playerID);
             this.gameState.removePlayer(playerID);
-            this.updateSecondaryGameState();
+            if (this.secondary != null) {
+                this.updateSecondaryGameState();
+            }
             System.out.println(this.gameState.toString());
             return true;
         }
@@ -487,6 +502,7 @@ public class Game implements GameInterface {
             return;
         }
 
+        System.out.println("");
         GameInterface secondaryStub = this.gameState.getStateByPlayerID(this.secondary).getStub();
         try {
             secondaryStub.setGameState(this.gameState);
@@ -892,7 +908,11 @@ public class Game implements GameInterface {
                     GameInterface primaryStub = primary.getStub();
                     try {
                         primaryStub.dealWithUnactivePlayer((String) playerIDList.get(rnd));
-                        this.gameState.removePlayer((String) playerIDList.get(rnd));
+                        String playerIDtoBeDelete = (String) playerIDList.get(rnd);
+                        if(playerIDtoBeDelete.equals(this.secondary)){
+                            this.secondary = null;
+                        }
+                        this.gameState.removePlayer(playerIDtoBeDelete);
                     } catch (Exception ee) {
 
                     }
@@ -989,9 +1009,10 @@ public class Game implements GameInterface {
             System.out.println(game.getGameState().getGrid().toString());
 
             // If there are two players, set the second one as secondary server
-        } else if (game.playerList.getSize() == 2) {
-            game.startSecondary();
         }
+//        else if (game.playerList.getSize() == 2) {
+//            game.startSecondary();
+//        }
 
 
         // Join game
