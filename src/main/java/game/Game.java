@@ -177,6 +177,8 @@ public class Game implements GameInterface {
             @Override
             public void run() {
 
+//                System.out.println("scheduling ...");
+
                 String monitoredServer = "";
                 // Get server stub
                 GameInterface serverStub = null;
@@ -202,6 +204,7 @@ public class Game implements GameInterface {
                     } catch (Exception e) {
                         timer.cancel();
                         Game.this.recover(monitoredServer);
+                        Game.this.pingServer();
                         System.err.println("Ping exception: " + e.toString());
                         e.printStackTrace();
                     }
@@ -383,13 +386,14 @@ public class Game implements GameInterface {
 
                 // Send move request to the primary server. If primary server is not reachable
                 // deal with exception and then keep trying to move
-                GameState gameState = null;
+                Map<String, Object> primaryReturn = null;
+
                 boolean done = false;
                 while (!done) {
                     // Get primary stub
                     GameInterface primaryStub = this.gameState.getStates().get(this.primary).getStub();
                     try {
-                        gameState = primaryStub.makeMove(this.player.getplayerID(), command);
+                        primaryReturn = primaryStub.makeMove(this.player.getplayerID(), command);
                         done = true;
                     } catch (Exception e) {
                         playerDealWithPrimaryDown();//xyx
@@ -398,10 +402,17 @@ public class Game implements GameInterface {
                     }
                 }
 
-                // If primary returns game state, update the player game state.
+                // If primary returns not null, update the player game state and server details if neccessary.
                 // Else the move is not allowed
-                if (gameState != null) {
+                if (primaryReturn != null) {
+                    GameState gameState = (GameState) primaryReturn.get("gameState");
                     this.setGameState(gameState);
+                    int primaryVersion = (int) primaryReturn.get("version");
+                    if (primaryVersion != this.version) {
+                        this.version = primaryVersion;
+                        this.primary = (String) primaryReturn.get("primary");
+                        this.secondary = (String) primaryReturn.get("secondary");
+                    }
                     baseDesktop.refresh(this.gameState);
                 } else {
                     System.out.println("The move request was declined");
@@ -482,7 +493,7 @@ public class Game implements GameInterface {
      * @param command  char. Game instruction.
      * @return GameState. THe updated game state.
      */
-    public synchronized GameState makeMove(String playerID, char command) {
+    public synchronized Map<String, Object> makeMove(String playerID, char command) {
         if (this.isPrimary()) {
 
             // Make move
@@ -493,7 +504,13 @@ public class Game implements GameInterface {
                 this.updateSecondaryGameState();
             }
         }
-        return this.gameState;
+
+        Map<String, Object> primaryReturn = new HashMap<>();
+        primaryReturn.put("version", this.version);
+        primaryReturn.put("primary", this.primary);
+        primaryReturn.put("secondary", this.secondary);
+        primaryReturn.put("gameState", this.gameState);
+        return primaryReturn;
     }
 
     private void updateSecondaryGameState() {

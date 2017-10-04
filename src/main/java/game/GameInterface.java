@@ -5,6 +5,7 @@ import player.Player;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.Map;
 
 /**
  * Created by chuanyu on 17/9/17.
@@ -15,7 +16,7 @@ public interface GameInterface extends Remote {
 
     public GameState joinGameServer(Player player) throws RemoteException;
 
-    public GameState makeMove(String uid, char command) throws RemoteException;
+    public Map<String, Object> makeMove(String uid, char command) throws RemoteException;
 
     public GameState getGameState() throws RemoteException;
 
