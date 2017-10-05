@@ -67,6 +67,7 @@ public class BaseDesktop extends JFrame implements WindowListener {
 
     public void refresh(GameState gs) {
         this.gridMap.refreshState(gs);
+        this.scorePane.refreshScores(gs);
     }
     
     public void DisplayGrid(){

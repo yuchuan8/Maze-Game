@@ -58,7 +58,7 @@ public class GuiGrid extends JInternalFrame {
         for(int i = 0; i < gridDimension; i++) {
             for(int j = 0; j < gridDimension; j++) {
                 JButton n = new JButton();
-                setKeyListener(n);
+//                setKeyListener(n);
                 String cor = i + "+" + j;
                 gridMap.put(cor, n);
                 add(n); 		
@@ -66,7 +66,7 @@ public class GuiGrid extends JInternalFrame {
 	}
         
         this.refreshState(gameState);
-        desktop.DisplayScores();
+        //desktop.DisplayScores();
         
     }
     
@@ -120,38 +120,38 @@ public class GuiGrid extends JInternalFrame {
         n.setText("*");
     }
     
-    private void setKeyListener(JButton jb) {
-        jb.addKeyListener(new KeyAdapter() {
-      
-        @Override
-        public void keyPressed(KeyEvent e) {
-            String uid = player.getplayerID();
-            if(e.getKeyCode() == 38) {
-                char c = '4';	
-                refreshState(game.makeMove(uid,c));
-   
-		}
-		else if(e.getKeyCode() == 39) {
-                    char c = '3';	
-                    refreshState(game.makeMove(uid,c));
-                    
-		}
-		else if(e.getKeyCode() == 40) {
-			
-                    char c = '2';	
-		    refreshState(game.makeMove(uid,c));
-                    
-		}
-		else if(e.getKeyCode() == 37) {
-
-                    char c = '1';	
-		    refreshState(game.makeMove(uid,c));
-                    
-		}
-		else {
-			//do nothing
-		}
-      }
-    });
-    }
+//    private void setKeyListener(JButton jb) {
+//        jb.addKeyListener(new KeyAdapter() {
+//
+//        @Override
+//        public void keyPressed(KeyEvent e) {
+//            String uid = player.getplayerID();
+//            if(e.getKeyCode() == 38) {
+//                char c = '4';
+//                refreshState(game.makeMove(uid,c));
+//
+//		}
+//		else if(e.getKeyCode() == 39) {
+//                    char c = '3';
+//                    refreshState(game.makeMove(uid,c));
+//
+//		}
+//		else if(e.getKeyCode() == 40) {
+//
+//                    char c = '2';
+//		    refreshState(game.makeMove(uid,c));
+//
+//		}
+//		else if(e.getKeyCode() == 37) {
+//
+//                    char c = '1';
+//		    refreshState(game.makeMove(uid,c));
+//
+//		}
+//		else {
+//			//do nothing
+//		}
+//      }
+//    });
+//    }
 }
