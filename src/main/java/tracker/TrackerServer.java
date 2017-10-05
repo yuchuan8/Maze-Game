@@ -79,8 +79,10 @@ public class TrackerServer implements TrackerInterface {
      * @return
      */
     public int removePlayer(String playerID) {
-        Map <String, Object> message = playerList.removePlayer(playerID);
+        System.out.println(playerID);
+        Map <String, Object> message = this.playerList.removePlayer(playerID);
         int successful = (int)message.get("isSuccessful_int");
+        System.out.println((String)message.get("message_String"));
         System.out.println(this.playerList.toString());
         return successful;
     }

@@ -175,9 +175,7 @@ public class Game implements GameInterface {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-
 //                System.out.println("scheduling ...");
-
                 String monitoredServer = "";
                 // Get server stub
                 GameInterface serverStub = null;
@@ -226,7 +224,6 @@ public class Game implements GameInterface {
             } catch (Exception e) {
                 
             }
-
             // Set the secondary server to be the primary server
             this.setIsPrimary(true);
             this.setIsSecondary(false);
@@ -237,14 +234,15 @@ public class Game implements GameInterface {
             System.out.println("recovering secondary");
             // Remove the old secondary server from game state
             this.gameState.removePlayer(this.secondary);
-            this.setSecondary(null);
-
             // Remove the old secondary from the tracker
             try {
-                this.trackerStub.removePlayer(this.secondary);
+                System.out.println("remove down secondary from tracker");
+                int successful = this.trackerStub.removePlayer(this.secondary);
+                System.out.println("remove down secondary from tracker: successful?---"+successful);
             } catch (Exception e) {
-
+                System.out.println("remove down secondary from tracker failed");
             }
+            this.setSecondary(null);
 
         }
 
@@ -253,16 +251,23 @@ public class Game implements GameInterface {
 
         boolean done = false;
 
-        // If there is only one player in the game state, do not try to find a secondary server
-        if (this.gameState.getStates().size() == 1) {
-            return;
-        }
-
         while (!done) {
+
+            // If there is only one player in the game state, do not try to find a secondary server
+            if (this.gameState.getStates().size() == 1) {
+                return;
+            }
+
             // Randomly select a server from game state
             String selectedID = this.getRandomPlayerFromGameState();
-            GameInterface selectedStub = this.gameState.getStateByPlayerID(selectedID).getStub();
-
+            State seletedState = this.gameState.getStateByPlayerID(selectedID);
+            GameInterface selectedStub = null;
+            if(seletedState != null) {
+                selectedStub = seletedState.getStub();
+            }else {
+                this.gameState.removePlayer(selectedID);
+                continue;
+            }
             try {
                 // Sync game state
                 selectedStub.setGameState(this.gameState);
@@ -758,7 +763,10 @@ public class Game implements GameInterface {
     private PrimaryUpdate generatePrimaryUpdate(){
         State primaryState = this.gameState.getStateByPlayerID(this.primary);
         State secondryState = this.gameState.getStateByPlayerID(this.secondary);
-        Player localPrimary = new Player(this.primary,primaryState.getStub());
+        Player localPrimary = null;
+        if(primaryState != null) {
+            localPrimary = new Player(this.primary, primaryState.getStub());
+        }
         Player localSecondry = null;
         if(secondryState != null){
             localSecondry = new Player(this.secondary,secondryState.getStub());
@@ -926,10 +934,10 @@ public class Game implements GameInterface {
                     try {
                         primaryStub.dealWithUnactivePlayer((String) playerIDList.get(rnd));
                         String playerIDtoBeDelete = (String) playerIDList.get(rnd);
-                        if(playerIDtoBeDelete.equals(this.secondary)){
-                            this.secondary = null;
-                        }
-                        this.gameState.removePlayer(playerIDtoBeDelete);
+                        //if(playerIDtoBeDelete.equals(this.secondary)){
+                        //    this.secondary = null;
+                        //}
+                        //this.gameState.removePlayer(playerIDtoBeDelete);
                     } catch (Exception ee) {
 
                     }
@@ -953,28 +961,28 @@ public class Game implements GameInterface {
     private void primaryDealWithUnactivePlayer(String PlayerID, String reporterID) throws RemoteException {
         State playerToBeDelete = this.gameState.getStateByPlayerID(PlayerID);
         if (playerToBeDelete != null) {
-            System.out.println("This player report:"+ reporterID);
-            if(PlayerID.equals(this.secondary)){
+            System.out.println("This player report:" + reporterID);
+            if (PlayerID.equals(this.secondary)) {
                 System.out.println(PlayerID + "this player is secondary, do nothing");
                 //this.secondary = null;//if secondary is down, do nothing.
-            }else {
+            } else {
                 System.out.println("Primary remove player:" + PlayerID);
                 this.gameState.removePlayer(PlayerID);//primary itself delete
-                if(this.isPrimary) {
+                if (this.isPrimary) {
                     this.version = this.version + 1;
                 }
-            }
 
-            PlayerList playerList = generatePlayerlistFromGameState(this.gameState);
-            this.trackerStub.updatePlayerList(playerList);//let tracker delete first
-            System.out.println("get secondary");
-            State secondary = this.gameState.getStateByPlayerID(this.secondary);
-            GameInterface secondaryStub = secondary.getStub();
-            System.out.println("send unactive player to secondary");
-            try {
-                secondaryStub.dealWithUnactivePlayer(PlayerID);//let secondary delete
-            } catch (Exception e) {
+                PlayerList playerList = generatePlayerlistFromGameState(this.gameState);
+                this.trackerStub.updatePlayerList(playerList);//let tracker delete first
+                System.out.println("get secondary");
+                State secondary = this.gameState.getStateByPlayerID(this.secondary);
+                GameInterface secondaryStub = secondary.getStub();
+                System.out.println("send unactive player to secondary");
+                try {
+                    secondaryStub.dealWithUnactivePlayer(PlayerID);//let secondary delete
+                } catch (Exception e) {
 
+                }
             }
         }
     }
@@ -1064,7 +1072,7 @@ public class Game implements GameInterface {
         //begine gossip 2 seconds later
         //and run it every 1 second
         Timer timer = new Timer();
-        long delay = 100;
+        long delay = 500;
         long interval = 500;
         timer.schedule(new TimerTask(){
             public void run() {
