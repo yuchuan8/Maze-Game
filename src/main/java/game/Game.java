@@ -119,9 +119,7 @@ public class Game implements GameInterface {
 
             // If received game state from primary, the player joins the game successfully
             if (this.gameState == null) {
-
                 return false;
-
             } else {
 
                 if (this.isSecondary) {
@@ -135,7 +133,7 @@ public class Game implements GameInterface {
             try{
                 GameInterface primaryStub = this.playerList.getPlayer(this.primary).getStub();
                 this.gameState = primaryStub.joinGameServer(this.player);
-                trackerStub.addPlayer(this.player);
+                //trackerStub.addPlayer(this.player);
                 return true;
             }catch (Exception ee){
                 System.err.println("Couldn't join the game: " + e.toString());
@@ -971,7 +969,6 @@ public class Game implements GameInterface {
                 if (this.isPrimary) {
                     this.version = this.version + 1;
                 }
-
                 PlayerList playerList = generatePlayerlistFromGameState(this.gameState);
                 this.trackerStub.updatePlayerList(playerList);//let tracker delete first
                 System.out.println("get secondary");
@@ -1082,13 +1079,9 @@ public class Game implements GameInterface {
                 //System.out.println("\n");
 //                System.out.println(game.gameState.getPlayerIDArrayList());
                 game.randomlyGossipPushUpdatePrimary(game.generatePrimaryUpdate());
-
             }
         }, delay, interval);
-
         // Play
         game.play();
-
     }
-
 }

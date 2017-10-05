@@ -62,6 +62,7 @@ public class TrackerServer implements TrackerInterface {
      */
     public void updatePlayerList(PlayerList players) {
         this.playerList = players;
+        System.out.println(this.playerList.toString());
     }
 
     /**
