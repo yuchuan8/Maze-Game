@@ -9,7 +9,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.spec.ECField;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -368,14 +367,8 @@ public class Game implements GameInterface {
     private void play() {
 
         BaseDesktop baseDesktop = new BaseDesktop(this.player, this.gameState);
-//        baseDesktop.DisplayGrid();
-//        baseDesktop.DisplayScores();
-
         boolean playing = true;
         Scanner reader = new Scanner(System.in);
-
-//        BaseDesktop gui = new BaseDesktop(this.player, this.gameState);
-//        gui.DisplayGrid();
 
         while (playing) {
 
@@ -406,6 +399,7 @@ public class Game implements GameInterface {
                 // Else the move is not allowed
                 if (primaryReturn != null) {
                     GameState gameState = (GameState) primaryReturn.get("gameState");
+
                     this.setGameState(gameState);
                     int primaryVersion = (int) primaryReturn.get("version");
                     if (primaryVersion != this.version) {
