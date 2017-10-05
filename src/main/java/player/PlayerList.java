@@ -38,7 +38,7 @@ public class PlayerList implements Serializable{
         // Otherwise, add the new player to the player list
         if (value != null) {
             addSuccessful = false;
-            System.err.println("Add new player Fail. Player exists.");
+            System.err.println("Add new player Fail. Player exists. Player name: " + player.getplayerID());
         } else {
             this.players.put(key, player);
             addSuccessful = true;
