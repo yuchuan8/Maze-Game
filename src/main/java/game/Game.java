@@ -112,7 +112,18 @@ public class Game implements GameInterface {
         try {
             // Remote call join game method using primary stub
             GameInterface primaryStub = this.playerList.getPlayer(this.primary).getStub();
-            this.gameState = primaryStub.joinGameServer(this.player);
+
+            Map<String, Object> primaryReturn = primaryStub.joinGameServer(this.player);
+
+            GameState gameState = (GameState) primaryReturn.get("gameState");
+            this.setGameState(gameState);
+            int primaryVersion = (int) primaryReturn.get("version");
+            this.version = primaryVersion;
+            this.primary = (String) primaryReturn.get("primary");
+            this.secondary = (String) primaryReturn.get("secondary");
+
+
+//            this.gameState = primaryStub.joinGameServer(this.player);
 
             // If received game state from primary, the player joins the game successfully
             if (this.gameState == null) {
@@ -129,8 +140,16 @@ public class Game implements GameInterface {
             playerDealWithPrimaryDown();//xyx
             try{
                 GameInterface primaryStub = this.playerList.getPlayer(this.primary).getStub();
-                this.gameState = primaryStub.joinGameServer(this.player);
-                //trackerStub.addPlayer(this.player);
+
+                Map<String, Object> primaryReturn = primaryStub.joinGameServer(this.player);
+                GameState gameState = (GameState) primaryReturn.get("gameState");
+                this.setGameState(gameState);
+                int primaryVersion = (int) primaryReturn.get("version");
+                this.version = primaryVersion;
+                this.primary = (String) primaryReturn.get("primary");
+                this.secondary = (String) primaryReturn.get("secondary");
+
+//                this.gameState = primaryStub.joinGameServer(this.player);
                 return true;
             }catch (Exception ee){
                 System.err.println("Couldn't join the game: " + e.toString());
@@ -308,7 +327,7 @@ public class Game implements GameInterface {
      * @param player Player. The new player object.
      * @return GameState object. This GameState object is returned to the new player to update its local game state.
      */
-    public GameState joinGameServer(Player player) {
+    public Map<String, Object> joinGameServer(Player player) {
         if (this.isPrimary()) {
             try {
                 // Add the player to the game state
@@ -331,7 +350,14 @@ public class Game implements GameInterface {
 
                 this.trackerStub.print(this.gameState.toString());
                 System.out.println(this.gameState.toString());
-                return this.gameState;
+
+                Map<String, Object> primaryReturn = new HashMap<>();
+                primaryReturn.put("version", this.version);
+                primaryReturn.put("primary", this.primary);
+                primaryReturn.put("secondary", this.secondary);
+                primaryReturn.put("gameState", this.gameState);
+
+                return primaryReturn;
 
             } catch (Exception e) {
                 System.err.println("Couldn't join the game: " + e.toString());
@@ -382,22 +408,26 @@ public class Game implements GameInterface {
                 Map<String, Object> primaryReturn = null;
 
                 boolean done = false;
-                while (!done) {
-                    // Get primary stub
-                    GameInterface primaryStub = this.gameState.getStates().get(this.primary).getStub();
-                    try {
-                        primaryReturn = primaryStub.makeMove(this.player.getplayerID(), command);
-                        done = true;
-                    } catch (Exception e) {
+                for (int i=0; i < 2; i++) {
+                    if (!done) {
+                        if (this.isPrimary()) {
+                            primaryReturn = this.makeMove(this.player.getplayerID(), command);
+                            done = true;
+                        } else {
+                            // Get primary stub
+                            GameInterface primaryStub = this.gameState.getStates().get(this.primary).getStub();
+                            try {
+                                primaryReturn = primaryStub.makeMove(this.player.getplayerID(), command);
+                                done = true;
+                            } catch (Exception e) {
+                                playerDealWithPrimaryDown();//xyx
+                                System.err.println("Make move exception: " + e.toString());
+                                e.printStackTrace();
 
-                        // if secondary finds out that primary is down while making a move, recover it
-//                        if (this.isSecondary()) {
-//                            this.recover("Primary");
-//                        }
-                        playerDealWithPrimaryDown();//xyx
-                        System.err.println("Make move exception: " + e.toString());
-                        // e.printStackTrace();
+                            }
+                        }
                     }
+
                 }
 
                 // If primary returns not null, update the player game state and server details if neccessary.
@@ -603,6 +633,7 @@ public class Game implements GameInterface {
                 done = true;
             } catch (Exception e) {
                 System.err.println("Remote invocation exception: " + e.toString());
+                e.printStackTrace();
             }
         }
 
@@ -1077,13 +1108,13 @@ public class Game implements GameInterface {
         long interval = 500;
         timer.schedule(new TimerTask(){
             public void run() {
-                System.out.println("Is primary: " + game.isPrimary());
-                System.out.println("Is secondary: " + game.isSecondary());
-                System.out.println("priamry is " + game.primary);
-                System.out.println("secondary is " + game.secondary);
-                System.out.println("version is "+ game.version);
-                System.out.println("\n");
-                System.out.println(game.gameState.getPlayerIDArrayList());
+//                System.out.println("Is primary: " + game.isPrimary());
+//                System.out.println("Is secondary: " + game.isSecondary());
+//                System.out.println("priamry is " + game.primary);
+//                System.out.println("secondary is " + game.secondary);
+//                System.out.println("version is "+ game.version);
+//                System.out.println("\n");
+//                System.out.println(game.gameState.getPlayerIDArrayList());
 
                 game.randomlyGossipPushUpdatePrimary(game.generatePrimaryUpdate());
             }

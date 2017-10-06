@@ -14,7 +14,7 @@ public interface GameInterface extends Remote {
 
     // Server methods
 
-    public GameState joinGameServer(Player player) throws RemoteException;
+    public Map<String, Object> joinGameServer(Player player) throws RemoteException;
 
     public Map<String, Object> makeMove(String uid, char command) throws RemoteException;
 

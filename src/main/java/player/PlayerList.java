@@ -34,15 +34,18 @@ public class PlayerList implements Serializable{
         String key = player.getplayerID();
         Player value = this.players.get(key);
 
-        // If player ID already exits, return false.
-        // Otherwise, add the new player to the player list
-        if (value != null) {
-            addSuccessful = false;
-            System.err.println("Add new player Fail. Player exists. Player name: " + player.getplayerID());
-        } else {
-            this.players.put(key, player);
-            addSuccessful = true;
-        }
+        this.players.put(key, player);
+        addSuccessful = true;
+
+//        // If player ID already exits, return false.
+//        // Otherwise, add the new player to the player list
+//        if (value != null) {
+//            addSuccessful = false;
+//            System.err.println("Add new player Fail. Player exists. Player name: " + player.getplayerID());
+//        } else {
+//            this.players.put(key, player);
+//            addSuccessful = true;
+//        }
 
         return addSuccessful;
     }
