@@ -153,6 +153,7 @@ public class GameState implements Serializable {
                     // set the new location as occupied
                     this.grid.setOccupied(1, i - 1, j);
                 }
+
                 break;
 
             default:

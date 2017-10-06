@@ -28,12 +28,13 @@ public class PlayerList implements Serializable{
      */
     public boolean addPlayer(Player player) {
 
-        boolean addSuccessful = false;
+        boolean addSuccessful = true;
 
         // Get new player ID
         String key = player.getplayerID();
         Player value = this.players.get(key);
-
+        this.players.put(key, player);
+        /*
         // If player ID already exits, return false.
         // Otherwise, add the new player to the player list
         if (value != null) {
@@ -43,7 +44,7 @@ public class PlayerList implements Serializable{
             this.players.put(key, player);
             addSuccessful = true;
         }
-
+        */
         return addSuccessful;
     }
 
