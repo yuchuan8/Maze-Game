@@ -38,4 +38,6 @@ public interface TrackerInterface extends Remote {
 
     public void print(String str) throws RemoteException;
 
+    public PlayerList getPlayerList() throws RemoteException;
+
 }

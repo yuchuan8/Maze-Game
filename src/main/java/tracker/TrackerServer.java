@@ -69,7 +69,7 @@ public class TrackerServer implements TrackerInterface {
      * add one player
      * @param player
      */
-    public void addPlayer(Player player) {
+    public synchronized void addPlayer(Player player) {
         this.playerList.addPlayer(player);
         System.out.println(this.playerList.toString());
     }
@@ -90,6 +90,10 @@ public class TrackerServer implements TrackerInterface {
 
     public void print(String str) {
         System.out.println(str);
+    }
+
+    public PlayerList getPlayerList() {
+        return this.playerList;
     }
 
     /**
