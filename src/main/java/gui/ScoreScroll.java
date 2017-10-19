@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package gui;
 
 import javax.swing.JInternalFrame;
@@ -45,7 +40,6 @@ public class ScoreScroll extends JInternalFrame{
         String[][] data = getData(gameState);
         this.tableModel.setDataVector(data, this.headers);
     }
-
 
     private String[][] getData(GameState gameState) {
         Map<String, Integer> unsortedScore = new HashMap<String, Integer>();

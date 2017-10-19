@@ -92,6 +92,10 @@ public class TrackerServer implements TrackerInterface {
         System.out.println(str);
     }
 
+    public PlayerList getPlayerList() {
+        return this.playerList;
+    }
+
     /**
      * java TrackerServer portNum=0 N=7 K=8
      * @param args

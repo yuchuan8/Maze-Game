@@ -1,6 +1,5 @@
 package game;
 
-import com.sun.org.apache.regexp.internal.RE;
 import player.Player;
 
 import java.rmi.Remote;
@@ -14,7 +13,7 @@ public interface GameInterface extends Remote {
 
     // Server methods
 
-    public GameState joinGameServer(Player player) throws RemoteException;
+    public Map<String, Object> joinGameServer(Player player) throws RemoteException;
 
     public Map<String, Object> makeMove(String uid, char command) throws RemoteException;
 
