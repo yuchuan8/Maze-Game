@@ -1,15 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package gui;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -69,7 +59,7 @@ public class BaseDesktop extends JFrame implements WindowListener {
         this.gridMap.refreshState(gs);
         this.scorePane.refreshScores(gs);
     }
-    
+
     public void DisplayGrid(){
         GuiGrid gridMap;
         gridMap =new GuiGrid(this, gameState);
@@ -92,43 +82,43 @@ public class BaseDesktop extends JFrame implements WindowListener {
     @Override
     public void windowOpened(WindowEvent e) {
 		// TODO Auto-generated method stub
-		
+
     }
 
     @Override
     public void windowClosing(WindowEvent e) {
 		// TODO Auto-generated method stub
     }
-    
+
     @Override
     public void windowClosed(WindowEvent e) {
 		// TODO Auto-generated method stub
-		
+
     }
 
     @Override
     public void windowIconified(WindowEvent e) {
 		// TODO Auto-generated method stub
-		
+
     }
 
     @Override
     public void windowDeiconified(WindowEvent e) {
 		// TODO Auto-generated method stub
-		
+
     }
 
     @Override
     public void windowActivated(WindowEvent e) {
 		// TODO Auto-generated method stub
-		
+
     }
 
-        
+
     @Override
     public void windowDeactivated(WindowEvent e) {
 		// TODO Auto-generated method stub
-		
+
     }
     
 }
